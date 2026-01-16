@@ -4,7 +4,14 @@
  * Ported from the Python implementation with adaptations for Node.js canvas.
  */
 
-import { createCanvas, loadImage, registerFont, CanvasRenderingContext2D, Image, Canvas } from "canvas";
+import {
+  createCanvas,
+  loadImage,
+  registerFont,
+  CanvasRenderingContext2D,
+  Image,
+  Canvas,
+} from "canvas";
 import { readFileSync, existsSync } from "fs";
 import {
   SKETCHBOOK_CONFIG,
@@ -21,6 +28,12 @@ import {
   RGBColor,
   WrapAlgorithm,
 } from "./textWrapper.js";
+import {
+  parseTextWithEmoji,
+  loadTwemojiImage,
+  preloadEmojis,
+  TextSegment,
+} from "./emojiRenderer.js";
 
 /**
  * Horizontal alignment options
@@ -129,8 +142,13 @@ function findOptimalFontSize(
   maxHeight: number,
   maxFontSize: number,
   lineSpacing: number,
-  wrapAlgorithm: WrapAlgorithm
-): { fontSize: number; lines: string[]; lineHeight: number; blockHeight: number } {
+  wrapAlgorithm: WrapAlgorithm,
+): {
+  fontSize: number;
+  lines: string[];
+  lineHeight: number;
+  blockHeight: number;
+} {
   let lo = 1;
   let hi = Math.min(maxHeight, maxFontSize);
   let bestSize = 0;
@@ -143,7 +161,12 @@ function findOptimalFontSize(
     ctx.font = `${mid}px SketchbookFont`;
 
     const lines = wrapText(ctx, text, maxWidth, wrapAlgorithm);
-    const { width, height, lineHeight } = measureTextBlock(ctx, lines, mid, lineSpacing);
+    const { width, height, lineHeight } = measureTextBlock(
+      ctx,
+      lines,
+      mid,
+      lineSpacing,
+    );
 
     if (width <= maxWidth && height <= maxHeight) {
       bestSize = mid;
@@ -185,7 +208,7 @@ function drawTextWithColors(
   lineHeight: number,
   align: HAlign,
   textColor: RGBColor,
-  bracketColor: RGBColor
+  bracketColor: RGBColor,
 ): void {
   let y = startY;
   let inBracket = false;
@@ -208,7 +231,7 @@ function drawTextWithColors(
       line,
       inBracket,
       bracketColor,
-      textColor
+      textColor,
     );
     inBracket = newInBracket;
 
@@ -225,6 +248,108 @@ function drawTextWithColors(
 }
 
 /**
+ * Calculate the width of text including emoji placeholders
+ * Emojis are rendered at the same size as the font height
+ */
+function measureTextWithEmoji(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  fontSize: number,
+): number {
+  const segments = parseTextWithEmoji(text);
+  let width = 0;
+
+  for (const segment of segments) {
+    if (segment.type === "emoji") {
+      // Emoji is rendered as a square with size equal to font size
+      width += fontSize;
+    } else {
+      width += measureTextWidth(ctx, segment.content);
+    }
+  }
+
+  return width;
+}
+
+/**
+ * Draw text on a canvas with color segments and emoji support
+ * Emojis are rendered as Twemoji images at the appropriate size
+ */
+async function drawTextWithEmojis(
+  ctx: CanvasRenderingContext2D,
+  lines: string[],
+  startX: number,
+  startY: number,
+  regionWidth: number,
+  lineHeight: number,
+  fontSize: number,
+  align: HAlign,
+  textColor: RGBColor,
+  bracketColor: RGBColor,
+): Promise<void> {
+  let y = startY;
+  let inBracket = false;
+
+  // Preload all emojis first
+  for (const line of lines) {
+    await preloadEmojis(line);
+  }
+
+  for (const line of lines) {
+    // Calculate line width including emojis
+    const lineWidth = measureTextWithEmoji(ctx, line, fontSize);
+
+    // Calculate X position based on alignment
+    let x: number;
+    if (align === "left") {
+      x = startX;
+    } else if (align === "center") {
+      x = startX + (regionWidth - lineWidth) / 2;
+    } else {
+      x = startX + regionWidth - lineWidth;
+    }
+
+    // Parse and draw colored segments with emoji support
+    const { segments, inBracket: newInBracket } = parseColorSegments(
+      line,
+      inBracket,
+      bracketColor,
+      textColor,
+    );
+    inBracket = newInBracket;
+
+    for (const segment of segments) {
+      if (segment.text) {
+        // Parse this segment for emojis
+        const emojiSegments = parseTextWithEmoji(segment.text);
+
+        for (const emojiSegment of emojiSegments) {
+          if (emojiSegment.type === "emoji") {
+            // Draw emoji as image
+            const emojiImage = await loadTwemojiImage(emojiSegment.content);
+            if (emojiImage) {
+              // Draw emoji at font size
+              // Since textBaseline is "top", y is the top of the text line
+              // Emoji should be drawn at the same y position as text
+              const emojiSize = fontSize;
+              ctx.drawImage(emojiImage, x, y, emojiSize, emojiSize);
+            }
+            x += fontSize;
+          } else {
+            // Draw regular text
+            ctx.fillStyle = rgbToCss(segment.color);
+            ctx.fillText(emojiSegment.content, x, y);
+            x += measureTextWidth(ctx, emojiSegment.content);
+          }
+        }
+      }
+    }
+
+    y += lineHeight;
+  }
+}
+
+/**
  * Calculate scaled dimensions while maintaining aspect ratio
  */
 function calculateScaledDimensions(
@@ -232,7 +357,7 @@ function calculateScaledDimensions(
   srcHeight: number,
   maxWidth: number,
   maxHeight: number,
-  allowUpscale: boolean
+  allowUpscale: boolean,
 ): { width: number; height: number } {
   const scaleW = maxWidth / srcWidth;
   const scaleH = maxHeight / srcHeight;
@@ -251,14 +376,20 @@ function calculateScaledDimensions(
 /**
  * Check if an image is vertical (portrait orientation)
  */
-function isVerticalImage(width: number, height: number, ratio: number = 1): boolean {
+function isVerticalImage(
+  width: number,
+  height: number,
+  ratio: number = 1,
+): boolean {
   return height * ratio > width;
 }
 
 /**
  * Generate a sketchbook image with text
  */
-export async function generateTextImage(options: TextImageOptions): Promise<Buffer> {
+export async function generateTextImage(
+  options: TextImageOptions,
+): Promise<Buffer> {
   ensureFontRegistered();
 
   const {
@@ -300,7 +431,7 @@ export async function generateTextImage(options: TextImageOptions): Promise<Buff
     regionHeight,
     maxFontHeight,
     lineSpacing,
-    wrapAlgorithm
+    wrapAlgorithm,
   );
 
   // Set final font
@@ -317,17 +448,18 @@ export async function generateTextImage(options: TextImageOptions): Promise<Buff
     yStart = regionY + regionHeight - blockHeight;
   }
 
-  // Draw text
-  drawTextWithColors(
+  // Draw text with emoji support
+  await drawTextWithEmojis(
     ctx,
     lines,
     regionX,
     yStart,
     regionWidth,
     lineHeight,
+    fontSize,
     align,
     textColor,
-    bracketColor
+    bracketColor,
   );
 
   // Apply overlay if enabled
@@ -346,7 +478,9 @@ export async function generateTextImage(options: TextImageOptions): Promise<Buff
 /**
  * Generate a sketchbook image with a pasted image
  */
-export async function generatePastedImage(options: PasteImageOptions): Promise<Buffer> {
+export async function generatePastedImage(
+  options: PasteImageOptions,
+): Promise<Buffer> {
   const {
     emotion = EmotionType.NORMAL,
     contentImage,
@@ -375,8 +509,14 @@ export async function generatePastedImage(options: PasteImageOptions): Promise<B
   const { textBoxTopLeft, textBoxBottomRight } = SKETCHBOOK_CONFIG;
   const regionX = textBoxTopLeft.x + padding;
   const regionY = textBoxTopLeft.y + padding;
-  const regionWidth = Math.max(1, textBoxBottomRight.x - textBoxTopLeft.x - 2 * padding);
-  const regionHeight = Math.max(1, textBoxBottomRight.y - textBoxTopLeft.y - 2 * padding);
+  const regionWidth = Math.max(
+    1,
+    textBoxBottomRight.x - textBoxTopLeft.x - 2 * padding,
+  );
+  const regionHeight = Math.max(
+    1,
+    textBoxBottomRight.y - textBoxTopLeft.y - 2 * padding,
+  );
 
   // Calculate scaled dimensions
   const { width: newWidth, height: newHeight } = calculateScaledDimensions(
@@ -384,7 +524,7 @@ export async function generatePastedImage(options: PasteImageOptions): Promise<B
     content.height,
     regionWidth,
     regionHeight,
-    allowUpscale
+    allowUpscale,
   );
 
   // Calculate paste position based on alignment
@@ -426,7 +566,9 @@ export async function generatePastedImage(options: PasteImageOptions): Promise<B
  * Generate a sketchbook image with both text and an image
  * Layout is determined by image orientation (vertical = side by side, horizontal = stacked)
  */
-export async function generateCombinedImage(options: CombinedImageOptions): Promise<Buffer> {
+export async function generateCombinedImage(
+  options: CombinedImageOptions,
+): Promise<Buffer> {
   ensureFontRegistered();
 
   const {
@@ -488,7 +630,7 @@ export async function generateCombinedImage(options: CombinedImageOptions): Prom
       content.height,
       imgRegionWidth,
       imgRegionHeight,
-      allowUpscale
+      allowUpscale,
     );
 
     // Center image in left region
@@ -507,7 +649,7 @@ export async function generateCombinedImage(options: CombinedImageOptions): Prom
       regionHeight,
       maxFontHeight,
       lineSpacing,
-      wrapAlgorithm
+      wrapAlgorithm,
     );
 
     ctx.font = `${fontSize}px SketchbookFont`;
@@ -522,16 +664,17 @@ export async function generateCombinedImage(options: CombinedImageOptions): Prom
       yStart = y1 + regionHeight - blockHeight;
     }
 
-    drawTextWithColors(
+    await drawTextWithEmojis(
       ctx,
       lines,
       rightRegionLeft,
       yStart,
       textRegionWidth,
       lineHeight,
+      fontSize,
       align,
       textColor,
-      bracketColor
+      bracketColor,
     );
   } else {
     // Stacked layout: image on top, text on bottom
@@ -547,7 +690,7 @@ export async function generateCombinedImage(options: CombinedImageOptions): Prom
       content.height,
       imgRegionWidth,
       imgRegionHeight,
-      allowUpscale
+      allowUpscale,
     );
 
     // Center image in top region
@@ -566,7 +709,7 @@ export async function generateCombinedImage(options: CombinedImageOptions): Prom
       textRegionHeight,
       maxFontHeight,
       lineSpacing,
-      wrapAlgorithm
+      wrapAlgorithm,
     );
 
     ctx.font = `${fontSize}px SketchbookFont`;
@@ -581,16 +724,17 @@ export async function generateCombinedImage(options: CombinedImageOptions): Prom
       yStart = textRegionTop + textRegionHeight - blockHeight;
     }
 
-    drawTextWithColors(
+    await drawTextWithEmojis(
       ctx,
       lines,
       x1,
       yStart,
       regionWidth,
       lineHeight,
+      fontSize,
       align,
       textColor,
-      bracketColor
+      bracketColor,
     );
   }
 

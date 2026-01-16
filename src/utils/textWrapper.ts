@@ -2,9 +2,14 @@
  * Text Wrapper Utility
  * Provides text wrapping algorithms for fitting text within a specified width.
  * Includes both a simple greedy algorithm and an improved Knuth-Plass algorithm.
+ * Supports emoji-aware text measurement using twemoji.
  */
 
-import { createCanvas, CanvasRenderingContext2D } from "canvas";
+import { CanvasRenderingContext2D } from "canvas";
+import twemojiModule, { Twemoji } from "@twemoji/api";
+
+// Cast to proper type for runtime usage
+const twemoji = twemojiModule as unknown as Twemoji;
 
 /**
  * RGB color type
@@ -25,12 +30,70 @@ export interface ColorSegment {
 
 /**
  * Measure the width of text using canvas context
+ * Now supports emoji-aware measurement where emojis are treated as square glyphs
+ * Uses twemoji for proper emoji detection
  */
 export function measureTextWidth(
   ctx: CanvasRenderingContext2D,
-  text: string
+  text: string,
+  emojiSize?: number,
 ): number {
-  return ctx.measureText(text).width;
+  // If no emoji size provided, use standard text measurement
+  if (emojiSize === undefined) {
+    return ctx.measureText(text).width;
+  }
+
+  // If no emojis in text, use standard measurement
+  if (!twemoji.test(text)) {
+    return ctx.measureText(text).width;
+  }
+
+  // Emoji-aware measurement using twemoji
+  let width = 0;
+  let lastIndex = 0;
+
+  // Find emoji positions using twemoji.replace
+  let tempText = text;
+  let offset = 0;
+  const emojiMatches: Array<{ emoji: string; index: number }> = [];
+
+  twemoji.replace(text, (emoji: string) => {
+    const index = tempText.indexOf(emoji);
+    if (index !== -1) {
+      emojiMatches.push({ emoji, index: index + offset });
+      // Replace found emoji with placeholder to handle duplicates
+      tempText =
+        tempText.substring(0, index) +
+        "\0".repeat(emoji.length) +
+        tempText.substring(index + emoji.length);
+    }
+    return emoji;
+  });
+
+  // Sort by index
+  emojiMatches.sort((a, b) => a.index - b.index);
+
+  // Calculate width
+  for (const match of emojiMatches) {
+    // Add width of text before this emoji
+    if (match.index > lastIndex) {
+      const textPart = text.slice(lastIndex, match.index);
+      width += ctx.measureText(textPart).width;
+    }
+
+    // Add emoji width (square, same size as font)
+    width += emojiSize;
+
+    lastIndex = match.index + match.emoji.length;
+  }
+
+  // Add remaining text after last emoji
+  if (lastIndex < text.length) {
+    const textPart = text.slice(lastIndex);
+    width += ctx.measureText(textPart).width;
+  }
+
+  return width;
 }
 
 /**
@@ -46,7 +109,7 @@ function isBracketToken(token: string): boolean {
 function splitLongToken(
   ctx: CanvasRenderingContext2D,
   token: string,
-  maxWidth: number
+  maxWidth: number,
 ): string[] {
   // Quick return if token already fits
   if (measureTextWidth(ctx, token) <= maxWidth) {
@@ -135,7 +198,7 @@ function splitLongToken(
 export function tokenize(
   ctx: CanvasRenderingContext2D,
   text: string,
-  maxWidth: number
+  maxWidth: number,
 ): string[] {
   const tokens: string[] = [];
   let buf = "";
@@ -203,7 +266,7 @@ export function tokenize(
 export function wrapLinesGreedy(
   ctx: CanvasRenderingContext2D,
   text: string,
-  maxWidth: number
+  maxWidth: number,
 ): string[] {
   const lines: string[] = [];
 
@@ -279,7 +342,7 @@ export function wrapLinesGreedy(
 export function wrapLinesKnuthPlass(
   ctx: CanvasRenderingContext2D,
   text: string,
-  maxWidth: number
+  maxWidth: number,
 ): string[] {
   const tokens = tokenize(ctx, text, maxWidth);
   const n = tokens.length;
@@ -362,7 +425,7 @@ export function parseColorSegments(
   text: string,
   inBracket: boolean,
   bracketColor: RGBColor,
-  normalColor: RGBColor
+  normalColor: RGBColor,
 ): { segments: ColorSegment[]; inBracket: boolean } {
   const segments: ColorSegment[] = [];
   let buf = "";
@@ -402,12 +465,14 @@ export function parseColorSegments(
 
 /**
  * Measure the dimensions of a text block
+ * Supports emoji-aware measurement when emojiAware is true
  */
 export function measureTextBlock(
   ctx: CanvasRenderingContext2D,
   lines: string[],
   fontSize: number,
-  lineSpacing: number
+  lineSpacing: number,
+  emojiAware: boolean = false,
 ): { width: number; height: number; lineHeight: number } {
   // Calculate line height based on font size and spacing
   const lineHeight = Math.ceil(fontSize * (1 + lineSpacing));
@@ -415,7 +480,10 @@ export function measureTextBlock(
   // Find the maximum width among all lines
   let maxWidth = 0;
   for (const line of lines) {
-    const width = measureTextWidth(ctx, line);
+    // Use emoji-aware measurement if enabled
+    const width = emojiAware
+      ? measureTextWidth(ctx, line, fontSize)
+      : measureTextWidth(ctx, line);
     if (width > maxWidth) {
       maxWidth = width;
     }
@@ -443,7 +511,7 @@ export function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,
   maxWidth: number,
-  algorithm: WrapAlgorithm = "greedy"
+  algorithm: WrapAlgorithm = "greedy",
 ): string[] {
   if (algorithm === "knuth_plass") {
     return wrapLinesKnuthPlass(ctx, text, maxWidth);
