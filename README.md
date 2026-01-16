@@ -2,6 +2,8 @@
 
 A Discord user application that generates images with text and/or images on Anan's sketchbook. Users can customize facial expressions, text alignment, and send results to channels or direct messages.
 
+![Natsume Anan Sketchbook Example](./assets/example.png)
+
 ## Features
 
 - Generate sketchbook images with custom text
