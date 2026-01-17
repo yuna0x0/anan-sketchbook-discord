@@ -2,7 +2,7 @@
  * Text Wrapper Utility
  * Provides text wrapping algorithms for fitting text within a specified width.
  * Includes both a simple greedy algorithm and an improved Knuth-Plass algorithm.
- * Supports emoji-aware text measurement using twemoji.
+ * Supports emoji-aware text measurement using twemoji and Discord custom emojis.
  */
 
 import { CanvasRenderingContext2D } from "canvas";
@@ -10,6 +10,47 @@ import twemojiModule, { Twemoji } from "@twemoji/api";
 
 // Cast to proper type for runtime usage
 const twemoji = twemojiModule as unknown as Twemoji;
+
+/**
+ * Discord custom emoji regex pattern
+ * Matches both static <:name:id> and animated <a:name:id> formats
+ */
+const DISCORD_EMOJI_REGEX = /<a?:\w+:\d+>/g;
+
+/**
+ * Split text into units while preserving Discord emojis as atomic units
+ * This prevents Discord emoji strings from being split during text wrapping
+ */
+function splitIntoUnits(text: string): string[] {
+  const units: string[] = [];
+  let lastIndex = 0;
+
+  // Reset regex state
+  DISCORD_EMOJI_REGEX.lastIndex = 0;
+
+  let match;
+  while ((match = DISCORD_EMOJI_REGEX.exec(text)) !== null) {
+    // Add characters before this emoji as individual units
+    if (match.index > lastIndex) {
+      const before = text.slice(lastIndex, match.index);
+      // Split non-emoji text into individual characters
+      units.push(...[...before]);
+    }
+
+    // Add the Discord emoji as a single atomic unit
+    units.push(match[0]);
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining characters after last emoji
+  if (lastIndex < text.length) {
+    const remaining = text.slice(lastIndex);
+    units.push(...[...remaining]);
+  }
+
+  return units;
+}
 
 /**
  * RGB color type
@@ -29,9 +70,17 @@ export interface ColorSegment {
 }
 
 /**
+ * Check if text contains Discord custom emojis
+ */
+function containsDiscordEmoji(text: string): boolean {
+  DISCORD_EMOJI_REGEX.lastIndex = 0;
+  return DISCORD_EMOJI_REGEX.test(text);
+}
+
+/**
  * Measure the width of text using canvas context
- * Now supports emoji-aware measurement where emojis are treated as square glyphs
- * Uses twemoji for proper emoji detection
+ * Supports emoji-aware measurement where emojis are treated as square glyphs
+ * Uses twemoji for Unicode emoji detection and regex for Discord custom emojis
  */
 export function measureTextWidth(
   ctx: CanvasRenderingContext2D,
@@ -43,37 +92,63 @@ export function measureTextWidth(
     return ctx.measureText(text).width;
   }
 
+  const hasDiscordEmoji = containsDiscordEmoji(text);
+  const hasTwemoji = twemoji.test(text);
+
   // If no emojis in text, use standard measurement
-  if (!twemoji.test(text)) {
+  if (!hasDiscordEmoji && !hasTwemoji) {
     return ctx.measureText(text).width;
   }
 
-  // Emoji-aware measurement using twemoji
-  let width = 0;
-  let lastIndex = 0;
+  // Collect all emoji matches (both Discord and Twemoji)
+  const emojiMatches: Array<{ match: string; index: number }> = [];
 
-  // Find emoji positions using twemoji.replace
-  let tempText = text;
-  let offset = 0;
-  const emojiMatches: Array<{ emoji: string; index: number }> = [];
-
-  twemoji.replace(text, (emoji: string) => {
-    const index = tempText.indexOf(emoji);
-    if (index !== -1) {
-      emojiMatches.push({ emoji, index: index + offset });
-      // Replace found emoji with placeholder to handle duplicates
-      tempText =
-        tempText.substring(0, index) +
-        "\0".repeat(emoji.length) +
-        tempText.substring(index + emoji.length);
+  // Find Discord emoji positions
+  if (hasDiscordEmoji) {
+    DISCORD_EMOJI_REGEX.lastIndex = 0;
+    let discordMatch;
+    while ((discordMatch = DISCORD_EMOJI_REGEX.exec(text)) !== null) {
+      emojiMatches.push({
+        match: discordMatch[0],
+        index: discordMatch.index,
+      });
     }
-    return emoji;
-  });
+  }
+
+  // Find Twemoji positions
+  if (hasTwemoji) {
+    let tempText = text;
+    let offset = 0;
+
+    twemoji.replace(text, (emoji: string) => {
+      const index = tempText.indexOf(emoji);
+      if (index !== -1) {
+        const actualIndex = index + offset;
+        // Check if this position overlaps with a Discord emoji
+        const overlapsDiscord = emojiMatches.some(
+          (m) =>
+            actualIndex >= m.index && actualIndex < m.index + m.match.length,
+        );
+        if (!overlapsDiscord) {
+          emojiMatches.push({ match: emoji, index: actualIndex });
+        }
+        // Replace found emoji with placeholder to handle duplicates
+        tempText =
+          tempText.substring(0, index) +
+          "\0".repeat(emoji.length) +
+          tempText.substring(index + emoji.length);
+      }
+      return emoji;
+    });
+  }
 
   // Sort by index
   emojiMatches.sort((a, b) => a.index - b.index);
 
   // Calculate width
+  let width = 0;
+  let lastIndex = 0;
+
   for (const match of emojiMatches) {
     // Add width of text before this emoji
     if (match.index > lastIndex) {
@@ -84,7 +159,7 @@ export function measureTextWidth(
     // Add emoji width (square, same size as font)
     width += emojiSize;
 
-    lastIndex = match.index + match.emoji.length;
+    lastIndex = match.index + match.match.length;
   }
 
   // Add remaining text after last emoji
@@ -97,7 +172,7 @@ export function measureTextWidth(
 }
 
 /**
- * Check if a token is a bracket token (starts with [ or end with ], or 【】)
+ * Check if a token is a bracket token (starts with [ or end with ], or special brackets)
  */
 function isBracketToken(token: string): boolean {
   return (
@@ -107,7 +182,19 @@ function isBracketToken(token: string): boolean {
 }
 
 /**
+ * Check if a token is a Discord emoji (should not be split)
+ */
+function isDiscordEmoji(token: string): boolean {
+  DISCORD_EMOJI_REGEX.lastIndex = 0;
+  return (
+    DISCORD_EMOJI_REGEX.test(token) &&
+    token.match(DISCORD_EMOJI_REGEX)?.[0] === token
+  );
+}
+
+/**
  * Split a long token into smaller pieces that fit within maxWidth
+ * Discord emojis are never split even if they exceed maxWidth
  */
 function splitLongToken(
   ctx: CanvasRenderingContext2D,
@@ -116,6 +203,11 @@ function splitLongToken(
 ): string[] {
   // Quick return if token already fits
   if (measureTextWidth(ctx, token) <= maxWidth) {
+    return [token];
+  }
+
+  // Never split Discord emojis - return as-is even if too wide
+  if (isDiscordEmoji(token)) {
     return [token];
   }
 
@@ -196,7 +288,8 @@ function splitLongToken(
 
 /**
  * Tokenize text for the Knuth-Plass algorithm
- * Handles brackets, spaces, and mixed content
+ * Handles brackets, spaces, Discord emojis, and mixed content
+ * Discord emojis are preserved as atomic tokens
  */
 export function tokenize(
   ctx: CanvasRenderingContext2D,
@@ -207,7 +300,45 @@ export function tokenize(
   let buf = "";
   let inBracket = false;
 
-  for (const ch of text) {
+  // First, identify all Discord emoji positions
+  const discordEmojiPositions: Array<{
+    start: number;
+    end: number;
+    match: string;
+  }> = [];
+  DISCORD_EMOJI_REGEX.lastIndex = 0;
+  let discordMatch;
+  while ((discordMatch = DISCORD_EMOJI_REGEX.exec(text)) !== null) {
+    discordEmojiPositions.push({
+      start: discordMatch.index,
+      end: discordMatch.index + discordMatch[0].length,
+      match: discordMatch[0],
+    });
+  }
+
+  // Helper to check if a position is inside a Discord emoji
+  const getDiscordEmojiAt = (pos: number) => {
+    return discordEmojiPositions.find((e) => pos >= e.start && pos < e.end);
+  };
+
+  let i = 0;
+  while (i < text.length) {
+    // Check if current position is start of a Discord emoji
+    const discordEmoji = getDiscordEmojiAt(i);
+    if (discordEmoji && i === discordEmoji.start) {
+      // Flush buffer before adding Discord emoji
+      if (buf) {
+        tokens.push(buf);
+        buf = "";
+      }
+      // Add Discord emoji as atomic token
+      tokens.push(discordEmoji.match);
+      i = discordEmoji.end;
+      continue;
+    }
+
+    const ch = text[i];
+
     if (ch === "[") {
       if (buf) {
         tokens.push(buf);
@@ -240,6 +371,7 @@ export function tokenize(
         tokens.push(ch);
       }
     }
+    i++;
   }
   if (buf) {
     tokens.push(buf);
@@ -265,11 +397,13 @@ export function tokenize(
 /**
  * Simple greedy text wrapping algorithm
  * Wraps text to fit within the specified width
+ * When emojiSize is provided, Discord emojis are measured as squares of that size
  */
 export function wrapLinesGreedy(
   ctx: CanvasRenderingContext2D,
   text: string,
   maxWidth: number,
+  emojiSize?: number,
 ): string[] {
   const lines: string[] = [];
 
@@ -283,7 +417,8 @@ export function wrapLinesGreedy(
     }
 
     const hasSpace = para.includes(" ");
-    const units = hasSpace ? para.split(" ") : [...para];
+    // Use splitIntoUnits to preserve Discord emojis as atomic units
+    const units = hasSpace ? para.split(" ") : splitIntoUnits(para);
     let buf = "";
 
     const unitJoin = (a: string, b: string): string => {
@@ -293,7 +428,7 @@ export function wrapLinesGreedy(
 
     for (const u of units) {
       const trial = unitJoin(buf, u);
-      const w = measureTextWidth(ctx, trial);
+      const w = measureTextWidth(ctx, trial, emojiSize);
 
       if (w <= maxWidth) {
         buf = trial;
@@ -306,10 +441,17 @@ export function wrapLinesGreedy(
       }
 
       // Handle current unit
+      // Never split Discord emojis - treat them as atomic units
+      if (isDiscordEmoji(u)) {
+        // Discord emoji doesn't fit on current line, put it on its own line
+        buf = u;
+        continue;
+      }
+
       if (hasSpace && u.length > 1) {
         let tmp = "";
         for (const ch of u) {
-          if (measureTextWidth(ctx, tmp + ch) <= maxWidth) {
+          if (measureTextWidth(ctx, tmp + ch, emojiSize) <= maxWidth) {
             tmp += ch;
           } else {
             if (tmp) {
@@ -322,7 +464,7 @@ export function wrapLinesGreedy(
         continue;
       }
 
-      if (measureTextWidth(ctx, u) <= maxWidth) {
+      if (measureTextWidth(ctx, u, emojiSize) <= maxWidth) {
         buf = u;
       } else {
         lines.push(u);
@@ -341,11 +483,13 @@ export function wrapLinesGreedy(
 /**
  * Improved Knuth-Plass text wrapping algorithm
  * Uses dynamic programming to minimize raggedness
+ * When emojiSize is provided, Discord emojis are measured as squares of that size
  */
 export function wrapLinesKnuthPlass(
   ctx: CanvasRenderingContext2D,
   text: string,
   maxWidth: number,
+  emojiSize?: number,
 ): string[] {
   const tokens = tokenize(ctx, text, maxWidth);
   const n = tokens.length;
@@ -355,7 +499,7 @@ export function wrapLinesKnuthPlass(
   }
 
   // Calculate cumulative widths
-  const widths = tokens.map((t) => measureTextWidth(ctx, t));
+  const widths = tokens.map((t) => measureTextWidth(ctx, t, emojiSize));
   const cum: number[] = new Array(n + 1).fill(0);
   for (let i = 0; i < n; i++) {
     cum[i + 1] = cum[i] + widths[i];
@@ -392,7 +536,7 @@ export function wrapLinesKnuthPlass(
     let cur = "";
     for (const tok of tokens) {
       const trial = cur + tok;
-      if (measureTextWidth(ctx, trial) <= maxWidth) {
+      if (measureTextWidth(ctx, trial, emojiSize) <= maxWidth) {
         cur = trial;
       } else {
         if (cur) {
@@ -509,15 +653,17 @@ export type WrapAlgorithm = "greedy" | "knuth_plass";
 
 /**
  * Wrap text using the specified algorithm
+ * When emojiSize is provided, Discord emojis are measured as squares of that size
  */
 export function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,
   maxWidth: number,
   algorithm: WrapAlgorithm = "greedy",
+  emojiSize?: number,
 ): string[] {
   if (algorithm === "knuth_plass") {
-    return wrapLinesKnuthPlass(ctx, text, maxWidth);
+    return wrapLinesKnuthPlass(ctx, text, maxWidth, emojiSize);
   }
-  return wrapLinesGreedy(ctx, text, maxWidth);
+  return wrapLinesGreedy(ctx, text, maxWidth, emojiSize);
 }

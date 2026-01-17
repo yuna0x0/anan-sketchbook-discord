@@ -30,7 +30,7 @@ import {
 } from "./textWrapper.js";
 import {
   parseTextWithEmoji,
-  loadTwemojiImage,
+  loadEmojiImage,
   preloadEmojis,
   TextSegment,
 } from "./emojiRenderer.js";
@@ -160,12 +160,13 @@ function findOptimalFontSize(
     const mid = Math.floor((lo + hi) / 2);
     ctx.font = `${mid}px SketchbookFont`;
 
-    const lines = wrapText(ctx, text, maxWidth, wrapAlgorithm);
+    const lines = wrapText(ctx, text, maxWidth, wrapAlgorithm, mid);
     const { width, height, lineHeight } = measureTextBlock(
       ctx,
       lines,
       mid,
       lineSpacing,
+      true, // Enable emoji-aware measurement for Discord emojis
     );
 
     if (width <= maxWidth && height <= maxHeight) {
@@ -182,7 +183,7 @@ function findOptimalFontSize(
   // Fallback to minimum size if nothing fits
   if (bestSize === 0) {
     ctx.font = `1px SketchbookFont`;
-    bestLines = wrapText(ctx, text, maxWidth, wrapAlgorithm);
+    bestLines = wrapText(ctx, text, maxWidth, wrapAlgorithm, 1);
     bestSize = 1;
     bestLineHeight = 1;
     bestBlockHeight = 1;
@@ -260,8 +261,8 @@ function measureTextWithEmoji(
   let width = 0;
 
   for (const segment of segments) {
-    if (segment.type === "emoji") {
-      // Emoji is rendered as a square with size equal to font size
+    if (segment.type === "emoji" || segment.type === "discord_emoji") {
+      // Both Twemoji and Discord emojis are rendered as squares with size equal to font size
       width += fontSize;
     } else {
       width += measureTextWidth(ctx, segment.content);
@@ -273,7 +274,7 @@ function measureTextWithEmoji(
 
 /**
  * Draw text on a canvas with color segments and emoji support
- * Emojis are rendered as Twemoji images at the appropriate size
+ * Supports both Twemoji and Discord custom emojis rendered as images at the appropriate size
  */
 async function drawTextWithEmojis(
   ctx: CanvasRenderingContext2D,
@@ -324,9 +325,12 @@ async function drawTextWithEmojis(
         const emojiSegments = parseTextWithEmoji(segment.text);
 
         for (const emojiSegment of emojiSegments) {
-          if (emojiSegment.type === "emoji") {
-            // Draw emoji as image
-            const emojiImage = await loadTwemojiImage(emojiSegment.content);
+          if (
+            emojiSegment.type === "emoji" ||
+            emojiSegment.type === "discord_emoji"
+          ) {
+            // Draw emoji as image (works for both Twemoji and Discord emojis)
+            const emojiImage = await loadEmojiImage(emojiSegment);
             if (emojiImage) {
               // Draw emoji at font size
               // Since textBaseline is "top", y is the top of the text line
