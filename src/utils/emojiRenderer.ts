@@ -22,6 +22,11 @@ const emojiImageCache = new Map<string, Image>();
 const DISCORD_EMOJI_REGEX = /<(a)?:([a-zA-Z0-9_]+):(\d+)>/g;
 
 /**
+ * Non-global regex for testing if text contains Discord emojis
+ */
+const DISCORD_EMOJI_TEST_REGEX = /<(a)?:([a-zA-Z0-9_]+):(\d+)>/;
+
+/**
  * Segment type for parsed text
  */
 export interface TextSegment {
@@ -113,8 +118,7 @@ export function containsEmoji(text: string): boolean {
  * Check if a string contains any Discord custom emojis
  */
 export function containsDiscordEmoji(text: string): boolean {
-  const regex = new RegExp(DISCORD_EMOJI_REGEX.source);
-  return regex.test(text);
+  return DISCORD_EMOJI_TEST_REGEX.test(text);
 }
 
 /**
@@ -183,9 +187,10 @@ export function parseTextWithEmoji(text: string): TextSegment[] {
   const allMatches: EmojiMatch[] = [];
   
   // Find Discord emojis first
-  const discordRegex = new RegExp(DISCORD_EMOJI_REGEX.source, "g");
+  // Reset lastIndex to ensure we start from the beginning
+  DISCORD_EMOJI_REGEX.lastIndex = 0;
   let discordMatch;
-  while ((discordMatch = discordRegex.exec(text)) !== null) {
+  while ((discordMatch = DISCORD_EMOJI_REGEX.exec(text)) !== null) {
     allMatches.push({
       type: "discord_emoji",
       content: discordMatch[0],
