@@ -449,15 +449,22 @@ export function wrapLinesGreedy(
       }
 
       if (hasSpace && u.length > 1) {
+        // Split unit into sub-units preserving Discord emojis
+        const subUnits = splitIntoUnits(u);
         let tmp = "";
-        for (const ch of u) {
-          if (measureTextWidth(ctx, tmp + ch, emojiSize) <= maxWidth) {
-            tmp += ch;
+        for (const subUnit of subUnits) {
+          if (measureTextWidth(ctx, tmp + subUnit, emojiSize) <= maxWidth) {
+            tmp += subUnit;
           } else {
             if (tmp) {
               lines.push(tmp);
             }
-            tmp = ch;
+            // If subUnit is a Discord emoji, keep it intact
+            if (isDiscordEmoji(subUnit)) {
+              tmp = subUnit;
+            } else {
+              tmp = subUnit;
+            }
           }
         }
         buf = tmp;

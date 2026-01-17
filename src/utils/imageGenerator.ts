@@ -334,9 +334,17 @@ async function drawTextWithEmojis(
             if (emojiImage) {
               // Draw emoji at font size
               // Since textBaseline is "top", y is the top of the text line
-              // Emoji should be drawn at the same y position as text
+              // Add a small vertical offset to align emoji with text baseline
+              // The offset is approximately 25% of font size to push emoji down
               const emojiSize = fontSize;
-              ctx.drawImage(emojiImage, x, y, emojiSize, emojiSize);
+              const emojiYOffset = fontSize * 0.25;
+              ctx.drawImage(
+                emojiImage,
+                x,
+                y + emojiYOffset,
+                emojiSize,
+                emojiSize,
+              );
             }
             x += fontSize;
           } else {
