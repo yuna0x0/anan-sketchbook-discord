@@ -97,10 +97,13 @@ export function measureTextWidth(
 }
 
 /**
- * Check if a token is a bracket token (starts with [ or end with ])
+ * Check if a token is a bracket token (starts with [ or end with ], or 【】)
  */
 function isBracketToken(token: string): boolean {
-  return token.startsWith("[") && token.endsWith("]");
+  return (
+    (token.startsWith("[") && token.endsWith("]")) ||
+    (token.startsWith("【") && token.endsWith("】"))
+  );
 }
 
 /**
@@ -431,7 +434,7 @@ export function parseColorSegments(
   let buf = "";
 
   for (const ch of text) {
-    if (ch === "[") {
+    if (ch === "[" || ch === "【") {
       if (buf) {
         segments.push({
           text: buf,
@@ -441,7 +444,7 @@ export function parseColorSegments(
       }
       segments.push({ text: ch, color: bracketColor });
       inBracket = true;
-    } else if (ch === "]") {
+    } else if (ch === "]" || ch === "】") {
       if (buf) {
         segments.push({ text: buf, color: bracketColor });
         buf = "";

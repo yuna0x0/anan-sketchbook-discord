@@ -181,10 +181,11 @@ anan-sketchbook-discord/
 
 ## Special Text Effects
 
-Text enclosed in square brackets `[]` will be displayed in purple color:
+Text enclosed in square brackets `[]` or Japanese brackets `【】` will be displayed in purple color:
 
 ```
 /sketchbook text:"This is normal but [this is purple] text"
+/sketchbook text:"This is normal but 【this is also purple】 text"
 ```
 
 ## Dependencies

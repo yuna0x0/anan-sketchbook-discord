@@ -99,7 +99,7 @@ export const SKETCHBOOK_CONFIG = {
   lineSpacing: 0.15,
   // Default text color (RGB)
   defaultTextColor: { r: 0, g: 0, b: 0 } as const,
-  // Bracket text color (RGB) - for text inside [] or brackets
+  // Bracket text color (RGB) - for text inside [] or 【】 brackets
   bracketTextColor: { r: 128, g: 0, b: 128 } as const,
   // Overlay image file name
   overlayImage: "base_overlay.png",
