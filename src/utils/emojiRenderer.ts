@@ -388,3 +388,49 @@ export function clearEmojiCache(): void {
 export function getEmojiCacheSize(): number {
   return emojiImageCache.size;
 }
+
+/**
+ * Count the number of emojis in text
+ * Returns the total count of both Twemoji and Discord custom emojis
+ */
+export function countEmojis(text: string): number {
+  const segments = parseTextWithEmoji(text);
+  return segments.filter(
+    (s) => s.type === "emoji" || s.type === "discord_emoji",
+  ).length;
+}
+
+/**
+ * Check if text is primarily emojis (emoji-only mode)
+ * Returns true if text contains 1-4 emojis and very little/no other text
+ * Used to determine if emojis should be rendered at a larger size
+ */
+export function isEmojiOnlyText(text: string): boolean {
+  const segments = parseTextWithEmoji(text);
+
+  let emojiCount = 0;
+  let textLength = 0;
+
+  for (const segment of segments) {
+    if (segment.type === "emoji" || segment.type === "discord_emoji") {
+      emojiCount++;
+    } else {
+      const trimmed = segment.content.replace(/\s/g, "");
+      textLength += trimmed.length;
+    }
+  }
+
+  if (emojiCount === 0) {
+    return false;
+  }
+
+  if (emojiCount > 4) {
+    return false;
+  }
+
+  if (textLength > 0) {
+    return false;
+  }
+
+  return true;
+}

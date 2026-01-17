@@ -33,6 +33,8 @@ import {
   loadEmojiImage,
   preloadEmojis,
   TextSegment,
+  isEmojiOnlyText,
+  countEmojis,
 } from "./emojiRenderer.js";
 
 /**
@@ -135,6 +137,47 @@ async function loadImageFromBuffer(buffer: Buffer): Promise<Image> {
 /**
  * Find the optimal font size that fits text within the given dimensions
  */
+/**
+ * Find optimal font size for emoji-only content
+ * Renders emojis at a much larger size since there's no text to wrap
+ */
+function findOptimalEmojiOnlyFontSize(
+  text: string,
+  maxWidth: number,
+  maxHeight: number,
+): {
+  fontSize: number;
+  lines: string[];
+  lineHeight: number;
+  blockHeight: number;
+} {
+  const emojiCount = countEmojis(text);
+
+  if (emojiCount === 1) {
+    const size = Math.min(maxWidth, maxHeight) * 0.8;
+    return {
+      fontSize: size,
+      lines: [text.trim()],
+      lineHeight: size,
+      blockHeight: size,
+    };
+  }
+
+  const spacing = 8;
+  const totalSpacing = (emojiCount - 1) * spacing;
+  const availableWidth = maxWidth - totalSpacing;
+  const sizeByWidth = availableWidth / emojiCount;
+  const sizeByHeight = maxHeight * 0.8;
+  const size = Math.min(sizeByWidth, sizeByHeight);
+
+  return {
+    fontSize: size,
+    lines: [text.trim()],
+    lineHeight: size,
+    blockHeight: size,
+  };
+}
+
 function findOptimalFontSize(
   ctx: CanvasRenderingContext2D,
   text: string,
@@ -149,6 +192,10 @@ function findOptimalFontSize(
   lineHeight: number;
   blockHeight: number;
 } {
+  if (isEmojiOnlyText(text)) {
+    return findOptimalEmojiOnlyFontSize(text, maxWidth, maxHeight);
+  }
+
   let lo = 1;
   let hi = Math.min(maxHeight, maxFontSize);
   let bestSize = 0;
@@ -251,6 +298,7 @@ function drawTextWithColors(
 /**
  * Calculate the width of text including emoji placeholders
  * Emojis are rendered at the same size as the font height
+ * In emoji-only mode, adds spacing between emojis
  */
 function measureTextWithEmoji(
   ctx: CanvasRenderingContext2D,
@@ -258,12 +306,18 @@ function measureTextWithEmoji(
   fontSize: number,
 ): number {
   const segments = parseTextWithEmoji(text);
+  const emojiOnly = isEmojiOnlyText(text);
+  const emojiSpacing = emojiOnly ? 8 : 0;
   let width = 0;
+  let emojiIndex = 0;
 
   for (const segment of segments) {
     if (segment.type === "emoji" || segment.type === "discord_emoji") {
-      // Both Twemoji and Discord emojis are rendered as squares with size equal to font size
+      if (emojiOnly && emojiIndex > 0) {
+        width += emojiSpacing;
+      }
       width += fontSize;
+      emojiIndex++;
     } else {
       width += measureTextWidth(ctx, segment.content);
     }
@@ -275,6 +329,7 @@ function measureTextWithEmoji(
 /**
  * Draw text on a canvas with color segments and emoji support
  * Supports both Twemoji and Discord custom emojis rendered as images at the appropriate size
+ * In emoji-only mode, renders emojis larger with spacing between them
  */
 async function drawTextWithEmojis(
   ctx: CanvasRenderingContext2D,
@@ -295,6 +350,10 @@ async function drawTextWithEmojis(
   for (const line of lines) {
     await preloadEmojis(line);
   }
+
+  // Check if this is emoji-only content for special rendering
+  const emojiOnly = lines.length === 1 && isEmojiOnlyText(lines[0]);
+  const emojiSpacing = emojiOnly ? 8 : 0;
 
   for (const line of lines) {
     // Calculate line width including emojis
@@ -319,6 +378,8 @@ async function drawTextWithEmojis(
     );
     inBracket = newInBracket;
 
+    let emojiIndex = 0;
+
     for (const segment of segments) {
       if (segment.text) {
         // Parse this segment for emojis
@@ -329,15 +390,18 @@ async function drawTextWithEmojis(
             emojiSegment.type === "emoji" ||
             emojiSegment.type === "discord_emoji"
           ) {
+            // Add spacing between emojis in emoji-only mode
+            if (emojiOnly && emojiIndex > 0) {
+              x += emojiSpacing;
+            }
+
             // Draw emoji as image (works for both Twemoji and Discord emojis)
             const emojiImage = await loadEmojiImage(emojiSegment);
             if (emojiImage) {
-              // Draw emoji at font size
-              // Since textBaseline is "top", y is the top of the text line
-              // Add a small vertical offset to align emoji with text baseline
-              // The offset is approximately 25% of font size to push emoji down
               const emojiSize = fontSize;
-              const emojiYOffset = fontSize * 0.25;
+              // In emoji-only mode, no Y offset needed (already centered)
+              // For mixed content, add offset to align with text baseline
+              const emojiYOffset = emojiOnly ? 0 : fontSize * 0.25;
               ctx.drawImage(
                 emojiImage,
                 x,
@@ -347,6 +411,7 @@ async function drawTextWithEmojis(
               );
             }
             x += fontSize;
+            emojiIndex++;
           } else {
             // Draw regular text
             ctx.fillStyle = rgbToCss(segment.color);
