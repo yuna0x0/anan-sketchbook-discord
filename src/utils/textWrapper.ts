@@ -2,11 +2,12 @@
  * Text Wrapper Utility
  * Provides text wrapping algorithms for fitting text within a specified width.
  * Includes both a simple greedy algorithm and an improved Knuth-Plass algorithm.
- * Supports emoji-aware text measurement using twemoji.
+ * Supports emoji-aware text measurement using twemoji and Discord custom emojis.
  */
 
 import { CanvasRenderingContext2D } from "canvas";
 import twemojiModule, { Twemoji } from "@twemoji/api";
+import { containsDiscordEmoji, parseTextWithEmoji } from "./emojiRenderer.js";
 
 // Cast to proper type for runtime usage
 const twemoji = twemojiModule as unknown as Twemoji;
@@ -31,7 +32,7 @@ export interface ColorSegment {
 /**
  * Measure the width of text using canvas context
  * Now supports emoji-aware measurement where emojis are treated as square glyphs
- * Uses twemoji for proper emoji detection
+ * Uses twemoji for proper emoji detection and Discord custom emoji detection
  */
 export function measureTextWidth(
   ctx: CanvasRenderingContext2D,
@@ -40,57 +41,33 @@ export function measureTextWidth(
 ): number {
   // If no emoji size provided, use standard text measurement
   if (emojiSize === undefined) {
-    return ctx.measureText(text).width;
+    // Still need to check for Discord emojis which should not be measured as text
+    if (!containsDiscordEmoji(text)) {
+      return ctx.measureText(text).width;
+    }
   }
 
+  // Check for any emojis (Unicode or Discord)
+  const hasUnicodeEmoji = twemoji.test(text);
+  const hasDiscordEmoji = containsDiscordEmoji(text);
+  
   // If no emojis in text, use standard measurement
-  if (!twemoji.test(text)) {
+  if (!hasUnicodeEmoji && !hasDiscordEmoji) {
     return ctx.measureText(text).width;
   }
 
-  // Emoji-aware measurement using twemoji
+  // Emoji-aware measurement using parseTextWithEmoji which handles both types
+  const segments = parseTextWithEmoji(text);
   let width = 0;
-  let lastIndex = 0;
+  const effectiveEmojiSize = emojiSize ?? ctx.measureText("M").width; // Fallback to approximate size
 
-  // Find emoji positions using twemoji.replace
-  let tempText = text;
-  let offset = 0;
-  const emojiMatches: Array<{ emoji: string; index: number }> = [];
-
-  twemoji.replace(text, (emoji: string) => {
-    const index = tempText.indexOf(emoji);
-    if (index !== -1) {
-      emojiMatches.push({ emoji, index: index + offset });
-      // Replace found emoji with placeholder to handle duplicates
-      tempText =
-        tempText.substring(0, index) +
-        "\0".repeat(emoji.length) +
-        tempText.substring(index + emoji.length);
+  for (const segment of segments) {
+    if (segment.type === "emoji" || segment.type === "discord_emoji") {
+      // Emoji is rendered as a square with size equal to font size
+      width += effectiveEmojiSize;
+    } else {
+      width += ctx.measureText(segment.content).width;
     }
-    return emoji;
-  });
-
-  // Sort by index
-  emojiMatches.sort((a, b) => a.index - b.index);
-
-  // Calculate width
-  for (const match of emojiMatches) {
-    // Add width of text before this emoji
-    if (match.index > lastIndex) {
-      const textPart = text.slice(lastIndex, match.index);
-      width += ctx.measureText(textPart).width;
-    }
-
-    // Add emoji width (square, same size as font)
-    width += emojiSize;
-
-    lastIndex = match.index + match.emoji.length;
-  }
-
-  // Add remaining text after last emoji
-  if (lastIndex < text.length) {
-    const textPart = text.slice(lastIndex);
-    width += ctx.measureText(textPart).width;
   }
 
   return width;
