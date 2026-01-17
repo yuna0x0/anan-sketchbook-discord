@@ -39,14 +39,6 @@ export function measureTextWidth(
   text: string,
   emojiSize?: number,
 ): number {
-  // If no emoji size provided, use standard text measurement
-  if (emojiSize === undefined) {
-    // Still need to check for Discord emojis which should not be measured as text
-    if (!containsDiscordEmoji(text)) {
-      return ctx.measureText(text).width;
-    }
-  }
-
   // Check for any emojis (Unicode or Discord)
   const hasUnicodeEmoji = twemoji.test(text);
   const hasDiscordEmoji = containsDiscordEmoji(text);
@@ -59,7 +51,8 @@ export function measureTextWidth(
   // Emoji-aware measurement using parseTextWithEmoji which handles both types
   const segments = parseTextWithEmoji(text);
   let width = 0;
-  const effectiveEmojiSize = emojiSize ?? ctx.measureText("M").width; // Fallback to approximate size
+  // Use provided emojiSize or fallback to approximate size based on font metrics
+  const effectiveEmojiSize = emojiSize ?? ctx.measureText("M").width;
 
   for (const segment of segments) {
     if (segment.type === "emoji" || segment.type === "discord_emoji") {
