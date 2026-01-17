@@ -31,6 +31,7 @@ import {
 import {
   parseTextWithEmoji,
   loadTwemojiImage,
+  loadDiscordEmojiImage,
   preloadEmojis,
   TextSegment,
 } from "./emojiRenderer.js";
@@ -249,7 +250,7 @@ function drawTextWithColors(
 
 /**
  * Calculate the width of text including emoji placeholders
- * Emojis are rendered at the same size as the font height
+ * Both Twemoji and Discord emojis are rendered at the same size as the font height
  */
 function measureTextWithEmoji(
   ctx: CanvasRenderingContext2D,
@@ -260,7 +261,7 @@ function measureTextWithEmoji(
   let width = 0;
 
   for (const segment of segments) {
-    if (segment.type === "emoji") {
+    if (segment.type === "emoji" || segment.type === "discord_emoji") {
       // Emoji is rendered as a square with size equal to font size
       width += fontSize;
     } else {
@@ -273,7 +274,7 @@ function measureTextWithEmoji(
 
 /**
  * Draw text on a canvas with color segments and emoji support
- * Emojis are rendered as Twemoji images at the appropriate size
+ * Emojis are rendered as Twemoji or Discord emoji images at the appropriate size
  */
 async function drawTextWithEmojis(
   ctx: CanvasRenderingContext2D,
@@ -325,7 +326,7 @@ async function drawTextWithEmojis(
 
         for (const emojiSegment of emojiSegments) {
           if (emojiSegment.type === "emoji") {
-            // Draw emoji as image
+            // Draw Twemoji as image
             const emojiImage = await loadTwemojiImage(emojiSegment.content);
             if (emojiImage) {
               // Draw emoji at font size
@@ -333,6 +334,19 @@ async function drawTextWithEmojis(
               // Emoji should be drawn at the same y position as text
               const emojiSize = fontSize;
               ctx.drawImage(emojiImage, x, y, emojiSize, emojiSize);
+            }
+            x += fontSize;
+          } else if (emojiSegment.type === "discord_emoji") {
+            // Draw Discord emoji as image
+            if (emojiSegment.discordEmojiId) {
+              const discordEmojiImage = await loadDiscordEmojiImage(
+                emojiSegment.discordEmojiId,
+                emojiSegment.isAnimated
+              );
+              if (discordEmojiImage) {
+                const emojiSize = fontSize;
+                ctx.drawImage(discordEmojiImage, x, y, emojiSize, emojiSize);
+              }
             }
             x += fontSize;
           } else {
