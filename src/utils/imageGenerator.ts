@@ -12,6 +12,7 @@ import {
   Image,
   Canvas,
 } from "canvas";
+import sharp from "sharp";
 import { readFileSync, existsSync } from "fs";
 import {
   SKETCHBOOK_CONFIG,
@@ -121,16 +122,26 @@ function rgbToCss(color: RGBColor): string {
 }
 
 /**
- * Supported image types by node-canvas
+ * Image types natively supported by node-canvas
  */
-type SupportedImageType = "png" | "jpeg" | "gif";
+type CanvasNativeType = "png" | "jpeg" | "gif";
+
+/**
+ * Image types that can be converted to PNG via sharp
+ */
+type ConvertibleType = "webp";
+
+/**
+ * All supported image types
+ */
+type SupportedImageType = CanvasNativeType | ConvertibleType;
 
 /**
  * Detect image type from buffer magic bytes
  * Returns the image type if supported, or null if unsupported/unknown
  */
 function detectImageType(buffer: Buffer): SupportedImageType | null {
-  if (buffer.length < 4) {
+  if (buffer.length < 12) {
     return null;
   }
 
@@ -159,7 +170,35 @@ function detectImageType(buffer: Buffer): SupportedImageType | null {
     return "gif";
   }
 
+  // WebP: 52 49 46 46 ... 57 45 42 50 (RIFF....WEBP)
+  if (
+    buffer[0] === 0x52 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x46 &&
+    buffer[8] === 0x57 &&
+    buffer[9] === 0x45 &&
+    buffer[10] === 0x42 &&
+    buffer[11] === 0x50
+  ) {
+    return "webp";
+  }
+
   return null;
+}
+
+/**
+ * Check if an image type needs conversion for canvas compatibility
+ */
+function needsConversion(imageType: SupportedImageType): boolean {
+  return imageType === "webp";
+}
+
+/**
+ * Convert an image buffer to PNG format using sharp
+ */
+async function convertToPng(buffer: Buffer): Promise<Buffer> {
+  return sharp(buffer).png().toBuffer();
 }
 
 /**
@@ -173,7 +212,7 @@ export function isImageSupported(buffer: Buffer): boolean {
  * Get a user-friendly error message for unsupported image types
  */
 export function getUnsupportedImageError(): string {
-  return "Unsupported image format. Please use PNG, JPEG, or GIF images.";
+  return "Unsupported image format. Please use PNG, JPEG, GIF, or WebP images.";
 }
 
 /**
@@ -184,13 +223,20 @@ async function loadImageFromPath(imagePath: string): Promise<Image> {
 }
 
 /**
- * Load an image from buffer with format validation
+ * Load an image from buffer with format validation and conversion if needed
  */
 async function loadImageFromBuffer(buffer: Buffer): Promise<Image> {
   const imageType = detectImageType(buffer);
   if (!imageType) {
     throw new Error(getUnsupportedImageError());
   }
+
+  // Convert WebP (and other non-native formats) to PNG for canvas compatibility
+  if (needsConversion(imageType)) {
+    const convertedBuffer = await convertToPng(buffer);
+    return loadImage(convertedBuffer);
+  }
+
   return loadImage(buffer);
 }
 

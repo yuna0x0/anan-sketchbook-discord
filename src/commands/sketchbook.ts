@@ -198,7 +198,8 @@ export async function execute(
       // Basic validation that the attachment claims to be an image
       if (!imageAttachment.contentType?.startsWith("image/")) {
         await interaction.editReply({
-          content: "The attached file must be an image (PNG, JPEG, or GIF).",
+          content:
+            "The attached file must be an image (PNG, JPEG, GIF, or WebP).",
         });
         return;
       }
