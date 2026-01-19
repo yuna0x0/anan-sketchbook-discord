@@ -18,7 +18,11 @@ import {
   EMOTION_DISPLAY_NAMES,
   EmotionTypeValue,
 } from "../config.js";
-import { generateSketchbookImage } from "../utils/imageGenerator.js";
+import {
+  generateSketchbookImage,
+  isImageSupported,
+  getUnsupportedImageError,
+} from "../utils/imageGenerator.js";
 import { WrapAlgorithm } from "../utils/textWrapper.js";
 
 // Build the slash command with all options
@@ -191,11 +195,10 @@ export async function execute(
     // Fetch image buffer if attachment is provided
     let contentImageBuffer: Buffer | undefined;
     if (imageAttachment) {
-      // Validate that the attachment is an image
+      // Basic validation that the attachment claims to be an image
       if (!imageAttachment.contentType?.startsWith("image/")) {
         await interaction.editReply({
-          content:
-            "The attached file must be an image (PNG, JPEG, GIF, or WebP).",
+          content: "The attached file must be an image (PNG, JPEG, or GIF).",
         });
         return;
       }
@@ -209,6 +212,14 @@ export async function execute(
         return;
       }
       contentImageBuffer = Buffer.from(await response.arrayBuffer());
+
+      // Validate the actual image format from magic bytes
+      if (!isImageSupported(contentImageBuffer)) {
+        await interaction.editReply({
+          content: getUnsupportedImageError(),
+        });
+        return;
+      }
     }
 
     // Generate the sketchbook image

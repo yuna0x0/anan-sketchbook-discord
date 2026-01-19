@@ -121,6 +121,62 @@ function rgbToCss(color: RGBColor): string {
 }
 
 /**
+ * Supported image types by node-canvas
+ */
+type SupportedImageType = "png" | "jpeg" | "gif";
+
+/**
+ * Detect image type from buffer magic bytes
+ * Returns the image type if supported, or null if unsupported/unknown
+ */
+function detectImageType(buffer: Buffer): SupportedImageType | null {
+  if (buffer.length < 4) {
+    return null;
+  }
+
+  // PNG: 89 50 4E 47 (‰PNG)
+  if (
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47
+  ) {
+    return "png";
+  }
+
+  // JPEG: FF D8 FF
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return "jpeg";
+  }
+
+  // GIF: 47 49 46 38 (GIF8)
+  if (
+    buffer[0] === 0x47 &&
+    buffer[1] === 0x49 &&
+    buffer[2] === 0x46 &&
+    buffer[3] === 0x38
+  ) {
+    return "gif";
+  }
+
+  return null;
+}
+
+/**
+ * Check if an image buffer is a supported format
+ */
+export function isImageSupported(buffer: Buffer): boolean {
+  return detectImageType(buffer) !== null;
+}
+
+/**
+ * Get a user-friendly error message for unsupported image types
+ */
+export function getUnsupportedImageError(): string {
+  return "Unsupported image format. Please use PNG, JPEG, or GIF images.";
+}
+
+/**
  * Load an image from file path
  */
 async function loadImageFromPath(imagePath: string): Promise<Image> {
@@ -128,9 +184,13 @@ async function loadImageFromPath(imagePath: string): Promise<Image> {
 }
 
 /**
- * Load an image from buffer
+ * Load an image from buffer with format validation
  */
 async function loadImageFromBuffer(buffer: Buffer): Promise<Image> {
+  const imageType = detectImageType(buffer);
+  if (!imageType) {
+    throw new Error(getUnsupportedImageError());
+  }
   return loadImage(buffer);
 }
 
