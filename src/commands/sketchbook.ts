@@ -12,12 +12,12 @@ import {
   MessageFlags,
   ApplicationIntegrationType,
   InteractionContextType,
+  Locale,
 } from "discord.js";
 import {
   EmotionTypeValue,
   ExpressionOption,
   ExpressionOptionValue,
-  EXPRESSION_DISPLAY_NAMES,
   getRandomEmotion,
 } from "../config.js";
 import {
@@ -33,6 +33,8 @@ import {
   ALIGN_CHOICE_LOCALIZATIONS,
   VALIGN_CHOICE_LOCALIZATIONS,
   WRAP_CHOICE_LOCALIZATIONS,
+  getResponseMessage,
+  getSketchbookMessage,
 } from "../locales.js";
 
 // Build the slash command with all options
@@ -73,79 +75,79 @@ export const data = new SlashCommandBuilder()
       .setRequired(false)
       .addChoices(
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.NORMAL],
+          name: "Normal",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.NORMAL],
           value: ExpressionOption.NORMAL,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.HAPPY],
+          name: "Happy",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.HAPPY],
           value: ExpressionOption.HAPPY,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.ANGRY],
+          name: "Angry",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.ANGRY],
           value: ExpressionOption.ANGRY,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.SPEECHLESS],
+          name: "Speechless",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SPEECHLESS],
           value: ExpressionOption.SPEECHLESS,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.BLUSH],
+          name: "Blush",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.BLUSH],
           value: ExpressionOption.BLUSH,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.YANDERE],
+          name: "Yandere",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.YANDERE],
           value: ExpressionOption.YANDERE,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.CLOSED_EYES],
+          name: "Closed Eyes",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.CLOSED_EYES],
           value: ExpressionOption.CLOSED_EYES,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.SAD],
+          name: "Sad",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SAD],
           value: ExpressionOption.SAD,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.SCARED],
+          name: "Scared",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SCARED],
           value: ExpressionOption.SCARED,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.EXCITED],
+          name: "Excited",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.EXCITED],
           value: ExpressionOption.EXCITED,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.SURPRISED],
+          name: "Surprised",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SURPRISED],
           value: ExpressionOption.SURPRISED,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.CRYING],
+          name: "Crying",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.CRYING],
           value: ExpressionOption.CRYING,
         },
         {
-          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.RANDOM],
+          name: "(Random)",
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.RANDOM],
           value: ExpressionOption.RANDOM,
@@ -210,7 +212,7 @@ export const data = new SlashCommandBuilder()
   .addBooleanOption((option) =>
     option
       .setName("overlay")
-      .setDescription("Apply the overlay effect (default: true)")
+      .setDescription("Apply the overlay effect (default: True)")
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.overlay)
       .setRequired(false),
   )
@@ -240,6 +242,9 @@ export const data = new SlashCommandBuilder()
 export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
+  // Get user's locale for localized responses
+  const locale = interaction.locale || Locale.EnglishUS;
+
   // Defer reply since image generation may take a moment
   const sendToDM = interaction.options.getBoolean("dm") ?? false;
   await interaction.deferReply({
@@ -273,8 +278,7 @@ export async function execute(
     // Validate that at least text or image is provided
     if (!text && !imageAttachment) {
       await interaction.editReply({
-        content:
-          "Please provide either text or an image (or both) to generate the sketchbook image.",
+        content: getSketchbookMessage("noInput", locale),
       });
       return;
     }
@@ -285,8 +289,7 @@ export async function execute(
       // Basic validation that the attachment claims to be an image
       if (!imageAttachment.contentType?.startsWith("image/")) {
         await interaction.editReply({
-          content:
-            "The attached file must be an image (PNG, JPEG, GIF, or WebP).",
+          content: getResponseMessage("imageNotSupported", locale),
         });
         return;
       }
@@ -295,7 +298,7 @@ export async function execute(
       const response = await fetch(imageAttachment.url);
       if (!response.ok) {
         await interaction.editReply({
-          content: "Failed to fetch the attached image. Please try again.",
+          content: getResponseMessage("imageFetchFailed", locale),
         });
         return;
       }
@@ -336,13 +339,12 @@ export async function execute(
         const dmChannel = await interaction.user.createDM();
         await dmChannel.send({ files: [attachment] });
         await interaction.editReply({
-          content: "The sketchbook image has been sent to your DMs!",
+          content: getResponseMessage("dmSent", locale),
         });
       } catch {
         // Failed to send DM (user might have DMs disabled)
         await interaction.editReply({
-          content:
-            "Failed to send DM. Please make sure your DMs are open, or try without the DM option.",
+          content: getResponseMessage("dmFailed", locale),
         });
       }
     } else {
@@ -352,8 +354,7 @@ export async function execute(
   } catch (error) {
     console.error("Error generating sketchbook image:", error);
     await interaction.editReply({
-      content:
-        "An error occurred while generating the sketchbook image. Please try again later.",
+      content: getResponseMessage("genericError", locale),
     });
   }
 }

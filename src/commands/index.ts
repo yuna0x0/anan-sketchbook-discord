@@ -4,14 +4,17 @@
  */
 
 import * as sketchbook from "./sketchbook.js";
+import * as dialogue from "./dialogue.js";
 
 // Export all commands as a collection
 export const commands = {
   sketchbook,
+  dialogue,
 };
 
 // Command type definition
 export type Command = {
   data: typeof sketchbook.data;
   execute: typeof sketchbook.execute;
+  autocomplete?: typeof dialogue.autocomplete;
 };
