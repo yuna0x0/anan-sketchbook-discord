@@ -164,6 +164,42 @@ export function getSketchbookMessage(
   );
 }
 
+// Sketchbook attachment description localizations
+export const SKETCHBOOK_ATTACHMENT_DESCRIPTION = {
+  withText: {
+    [Locale.EnglishUS]: "Sketchbook with text: ",
+    [Locale.EnglishGB]: "Sketchbook with text: ",
+    [Locale.ChineseTW]: "素描本上的文字：",
+    [Locale.ChineseCN]: "素描本上的文字：",
+    [Locale.Japanese]: "スケッチブックのテキスト：",
+  },
+  withImage: {
+    [Locale.EnglishUS]: "Sketchbook with image",
+    [Locale.EnglishGB]: "Sketchbook with image",
+    [Locale.ChineseTW]: "素描本上的圖片",
+    [Locale.ChineseCN]: "素描本上的图片",
+    [Locale.Japanese]: "スケッチブックの画像",
+  },
+} as const;
+
+export function getSketchbookAttachmentDescription(
+  text: string | null,
+  locale: string,
+): string {
+  if (text) {
+    const prefix =
+      SKETCHBOOK_ATTACHMENT_DESCRIPTION.withText[
+        locale as keyof typeof SKETCHBOOK_ATTACHMENT_DESCRIPTION.withText
+      ] || SKETCHBOOK_ATTACHMENT_DESCRIPTION.withText[Locale.EnglishUS];
+    return `${prefix}${text.substring(0, 100)}`;
+  }
+  return (
+    SKETCHBOOK_ATTACHMENT_DESCRIPTION.withImage[
+      locale as keyof typeof SKETCHBOOK_ATTACHMENT_DESCRIPTION.withImage
+    ] || SKETCHBOOK_ATTACHMENT_DESCRIPTION.withImage[Locale.EnglishUS]
+  );
+}
+
 // Sketchbook option description localizations
 export const OPTION_DESCRIPTION_LOCALIZATIONS: Record<string, LocalizationMap> =
   {

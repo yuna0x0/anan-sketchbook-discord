@@ -32,6 +32,7 @@ import {
   WRAP_CHOICE_LOCALIZATIONS,
   getResponseMessage,
   getSketchbookMessage,
+  getSketchbookAttachmentDescription,
 } from "../locales.js";
 import { Locale } from "discord.js";
 
@@ -357,9 +358,7 @@ export async function execute(
     // Create attachment from buffer
     const attachment = new AttachmentBuilder(imageBuffer, {
       name: "sketchbook.png",
-      description: text
-        ? `Sketchbook with text: ${text.substring(0, 100)}`
-        : "Sketchbook with image",
+      description: getSketchbookAttachmentDescription(text, locale),
     });
 
     // Send the result
