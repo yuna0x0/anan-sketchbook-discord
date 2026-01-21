@@ -40,6 +40,7 @@ import {
   STRETCH_MODE_LOCALIZATIONS,
   FONT_NAME_LOCALIZATIONS,
   getLocalizedBackgroundName,
+  getLocalizedCharacterName,
   LANGUAGE_CHOICE_LOCALIZATIONS,
   getResponseMessage,
   getDialogueMessage,
@@ -69,9 +70,9 @@ const languageChoices = SUPPORTED_NAME_LOCALES.map((locale) => ({
 }));
 
 // Build character choices with localizations (Discord limit: 25)
-// Use fullName (English) as default, with localized names for other locales
-const characterChoices = Object.entries(CHARACTERS).map(([id, info]) => ({
-  name: info.fullName,
+// Use English name as default, with localized names for other locales
+const characterChoices = Object.entries(CHARACTERS).map(([id]) => ({
+  name: CHARACTER_NAME_LOCALIZATIONS[id as CharacterId][Locale.EnglishUS]!,
   name_localizations: CHARACTER_NAME_LOCALIZATIONS[id as CharacterId],
   value: id,
 }));
@@ -385,7 +386,7 @@ export async function execute(
     if (expression === undefined) {
       await interaction.editReply({
         content: getDialogueMessage("invalidExpression", locale, {
-          characterName: character.fullName,
+          characterName: getLocalizedCharacterName(characterId, nameLanguage),
           maxExpression: String(character.expressions.length),
         }),
       });
@@ -447,9 +448,13 @@ export async function execute(
     });
 
     // Create attachment from buffer
+    const localizedCharacterName = getLocalizedCharacterName(
+      characterId,
+      nameLanguage,
+    );
     const attachment = new AttachmentBuilder(imageBuffer, {
       name: "dialogue.png",
-      description: `${character.fullName}: ${text.substring(0, 100)}`,
+      description: `${localizedCharacterName}: ${text.substring(0, 100)}`,
     });
 
     // Send the result

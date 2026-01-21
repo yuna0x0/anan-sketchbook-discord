@@ -19,7 +19,7 @@ import {
   ExpressionOptionValue,
   getRandomEmotion,
 } from "../config.js";
-import { generateSketchbookImage } from "../utils/imageGenerator.js";
+import { generateSketchbookImage } from "../utils/sketchbookGenerator.js";
 import {
   isImageSupported,
   getUnsupportedImageError,

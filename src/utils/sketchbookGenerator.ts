@@ -1,5 +1,5 @@
 /**
- * Image Generator Utility
+ * Sketchbook Image Generator Utility
  * Generates sketchbook images with text and/or images drawn on them.
  * Ported from the Python implementation with adaptations for Node.js canvas.
  */

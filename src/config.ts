@@ -159,7 +159,6 @@ export type LocalizedNameConfig = Partial<
 // Character information
 export interface CharacterInfo {
   id: string;
-  fullName: string;
   expressions: string[];
   font: string;
   themeColor: RGBColor;
@@ -199,7 +198,6 @@ export function getNameConfig(
 export const CHARACTERS: Record<string, CharacterInfo> = {
   ema: {
     id: "ema",
-    fullName: "Sakuraba Ema",
     expressions: [
       "ema_expression_1",
       "ema_expression_2",
@@ -295,7 +293,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   hiro: {
     id: "hiro",
-    fullName: "Nikaido Hiro",
     expressions: [
       "hiro_expression_1",
       "hiro_expression_2",
@@ -389,7 +386,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   sherry: {
     id: "sherry",
-    fullName: "Tachibana Sherry",
     expressions: [
       "sherry_expression_1",
       "sherry_expression_2",
@@ -466,7 +462,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   hanna: {
     id: "hanna",
-    fullName: "Toono Hanna",
     expressions: [
       "hanna_expression_1",
       "hanna_expression_2",
@@ -559,7 +554,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   anan: {
     id: "anan",
-    fullName: "Natsume Anan",
     expressions: [
       "anan_expression_1",
       "anan_expression_2",
@@ -656,7 +650,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   yuki: {
     id: "yuki",
-    fullName: "Tsukishiro Yuki",
     expressions: [
       "yuki_expression_1",
       "yuki_expression_2",
@@ -744,7 +737,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   meruru: {
     id: "meruru",
-    fullName: "Hikami Meruru",
     expressions: [
       "meruru_expression_1",
       "meruru_expression_2",
@@ -838,7 +830,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   noa: {
     id: "noa",
-    fullName: "Jougasaki Noa",
     expressions: [
       "noa_expression_1",
       "noa_expression_2",
@@ -932,7 +923,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   reia: {
     id: "reia",
-    fullName: "Hasumi Reia",
     expressions: [
       "reia_expression_1",
       "reia_expression_2",
@@ -1027,7 +1017,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   miria: {
     id: "miria",
-    fullName: "Saeki Miria",
     expressions: [
       "miria_expression_1",
       "miria_expression_2",
@@ -1119,7 +1108,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   nanoka: {
     id: "nanoka",
-    fullName: "Kurobe Nanoka",
     expressions: [
       "nanoka_expression_1",
       "nanoka_expression_2",
@@ -1212,7 +1200,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   margo: {
     id: "margo",
-    fullName: "Houshou Margo",
     expressions: [
       "margo_expression_1",
       "margo_expression_2",
@@ -1305,7 +1292,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   alisa: {
     id: "alisa",
-    fullName: "Shidou Alisa",
     expressions: [
       "alisa_expression_1",
       "alisa_expression_2",
@@ -1399,7 +1385,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   coco: {
     id: "coco",
-    fullName: "Sawatari Coco",
     expressions: [
       "coco_expression_1",
       "coco_expression_2",
