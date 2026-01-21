@@ -11,10 +11,3 @@ export const commands = {
   sketchbook,
   dialogue,
 };
-
-// Command type definition
-export type Command = {
-  data: typeof sketchbook.data;
-  execute: typeof sketchbook.execute;
-  autocomplete?: typeof dialogue.autocomplete;
-};
