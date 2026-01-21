@@ -1015,14 +1015,14 @@ export const BACKGROUND_NAME_LOCALIZATIONS: Record<
   },
   // 29_1: 諾亞的畫室 (白天)
   bg_029_001: {
-    [Locale.EnglishUS]: "Noah's Studio (Day)",
+    [Locale.EnglishUS]: "Noa's Studio (Day)",
     [Locale.ChineseCN]: "诺亚的画室 (白天)",
     [Locale.ChineseTW]: "諾亞的畫室 (白天)",
     [Locale.Japanese]: "ノアのアトリエ (昼)",
   },
   // 29_2: 諾亞的畫室 (夜晚)
   bg_029_002: {
-    [Locale.EnglishUS]: "Noah's Studio (Night)",
+    [Locale.EnglishUS]: "Noa's Studio (Night)",
     [Locale.ChineseCN]: "诺亚的画室 (夜晚)",
     [Locale.ChineseTW]: "諾亞的畫室 (夜晚)",
     [Locale.Japanese]: "ノアのアトリエ (夜)",
@@ -1036,7 +1036,7 @@ export const BACKGROUND_NAME_LOCALIZATIONS: Record<
   },
   // 30_2: 淋浴房 (有諾亞的畫)
   bg_030_002: {
-    [Locale.EnglishUS]: "Showers (with Noah's Painting)",
+    [Locale.EnglishUS]: "Showers (with Noa's Painting)",
     [Locale.ChineseCN]: "淋浴房 (有诺亚的画)",
     [Locale.ChineseTW]: "淋浴房 (有諾亞的畫)",
     [Locale.Japanese]: "シャワールーム (ノアの絵あり)",
