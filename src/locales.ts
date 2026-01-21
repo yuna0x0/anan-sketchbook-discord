@@ -5,7 +5,12 @@
  */
 
 import { LocalizationMap } from "discord.js";
-import { EmotionType, EmotionTypeValue } from "./config.js";
+import {
+  EmotionType,
+  EmotionTypeValue,
+  ExpressionOption,
+  ExpressionOptionValue,
+} from "./config.js";
 
 // Supported locale codes
 export type SupportedLocale = "zh-TW" | "zh-CN" | "ja";
@@ -69,9 +74,9 @@ export const OPTION_DESCRIPTION_LOCALIZATIONS: Record<string, LocalizationMap> =
     },
   };
 
-// Emotion display name localizations
-export const EMOTION_DISPLAY_NAME_LOCALIZATIONS: Record<
-  EmotionTypeValue,
+// Expression display name localizations (includes random)
+export const EXPRESSION_DISPLAY_NAME_LOCALIZATIONS: Record<
+  ExpressionOptionValue,
   LocalizationMap
 > = {
   [EmotionType.NORMAL]: {
@@ -133,6 +138,11 @@ export const EMOTION_DISPLAY_NAME_LOCALIZATIONS: Record<
     "zh-TW": "哭泣",
     "zh-CN": "哭泣",
     ja: "泣く",
+  },
+  [ExpressionOption.RANDOM]: {
+    "zh-TW": "(隨機)",
+    "zh-CN": "(随机)",
+    ja: "(ランダム)",
   },
 };
 

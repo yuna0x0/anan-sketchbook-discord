@@ -54,6 +54,15 @@ export const EmotionType = {
 
 export type EmotionTypeValue = (typeof EmotionType)[keyof typeof EmotionType];
 
+// Expression option for command input (includes "random")
+export const ExpressionOption = {
+  ...EmotionType,
+  RANDOM: "random",
+} as const;
+
+export type ExpressionOptionValue =
+  (typeof ExpressionOption)[keyof typeof ExpressionOption];
+
 // Mapping from emotion type to image file name
 export const EMOTION_IMAGE_MAP: Record<EmotionTypeValue, string> = {
   [EmotionType.NORMAL]: "base.png",
@@ -85,6 +94,19 @@ export const EMOTION_DISPLAY_NAMES: Record<EmotionTypeValue, string> = {
   [EmotionType.SURPRISED]: "Surprised",
   [EmotionType.CRYING]: "Crying",
 };
+
+// Display names for expression options (used in slash command choices)
+export const EXPRESSION_DISPLAY_NAMES: Record<ExpressionOptionValue, string> = {
+  ...EMOTION_DISPLAY_NAMES,
+  [ExpressionOption.RANDOM]: "(Random)",
+};
+
+// Get a random emotion
+export function getRandomEmotion(): EmotionTypeValue {
+  const emotions = Object.values(EmotionType);
+  const randomIndex = Math.floor(Math.random() * emotions.length);
+  return emotions[randomIndex];
+}
 
 // Sketchbook text area configuration
 // These coordinates define the drawable area on the sketchbook image

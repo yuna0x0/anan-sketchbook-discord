@@ -14,9 +14,11 @@ import {
   InteractionContextType,
 } from "discord.js";
 import {
-  EmotionType,
-  EMOTION_DISPLAY_NAMES,
   EmotionTypeValue,
+  ExpressionOption,
+  ExpressionOptionValue,
+  EXPRESSION_DISPLAY_NAMES,
+  getRandomEmotion,
 } from "../config.js";
 import {
   generateSketchbookImage,
@@ -27,7 +29,7 @@ import { WrapAlgorithm } from "../utils/textWrapper.js";
 import {
   COMMAND_DESCRIPTION_LOCALIZATIONS,
   OPTION_DESCRIPTION_LOCALIZATIONS,
-  EMOTION_DISPLAY_NAME_LOCALIZATIONS,
+  EXPRESSION_DISPLAY_NAME_LOCALIZATIONS,
   ALIGN_CHOICE_LOCALIZATIONS,
   VALIGN_CHOICE_LOCALIZATIONS,
   WRAP_CHOICE_LOCALIZATIONS,
@@ -71,76 +73,82 @@ export const data = new SlashCommandBuilder()
       .setRequired(false)
       .addChoices(
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.NORMAL],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.NORMAL],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.NORMAL],
-          value: EmotionType.NORMAL,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.NORMAL],
+          value: ExpressionOption.NORMAL,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.HAPPY],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.HAPPY],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.HAPPY],
-          value: EmotionType.HAPPY,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.HAPPY],
+          value: ExpressionOption.HAPPY,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.ANGRY],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.ANGRY],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.ANGRY],
-          value: EmotionType.ANGRY,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.ANGRY],
+          value: ExpressionOption.ANGRY,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.SPEECHLESS],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.SPEECHLESS],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.SPEECHLESS],
-          value: EmotionType.SPEECHLESS,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SPEECHLESS],
+          value: ExpressionOption.SPEECHLESS,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.BLUSH],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.BLUSH],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.BLUSH],
-          value: EmotionType.BLUSH,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.BLUSH],
+          value: ExpressionOption.BLUSH,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.YANDERE],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.YANDERE],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.YANDERE],
-          value: EmotionType.YANDERE,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.YANDERE],
+          value: ExpressionOption.YANDERE,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.CLOSED_EYES],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.CLOSED_EYES],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.CLOSED_EYES],
-          value: EmotionType.CLOSED_EYES,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.CLOSED_EYES],
+          value: ExpressionOption.CLOSED_EYES,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.SAD],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.SAD],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.SAD],
-          value: EmotionType.SAD,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SAD],
+          value: ExpressionOption.SAD,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.SCARED],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.SCARED],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.SCARED],
-          value: EmotionType.SCARED,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SCARED],
+          value: ExpressionOption.SCARED,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.EXCITED],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.EXCITED],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.EXCITED],
-          value: EmotionType.EXCITED,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.EXCITED],
+          value: ExpressionOption.EXCITED,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.SURPRISED],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.SURPRISED],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.SURPRISED],
-          value: EmotionType.SURPRISED,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SURPRISED],
+          value: ExpressionOption.SURPRISED,
         },
         {
-          name: EMOTION_DISPLAY_NAMES[EmotionType.CRYING],
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.CRYING],
           name_localizations:
-            EMOTION_DISPLAY_NAME_LOCALIZATIONS[EmotionType.CRYING],
-          value: EmotionType.CRYING,
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.CRYING],
+          value: ExpressionOption.CRYING,
+        },
+        {
+          name: EXPRESSION_DISPLAY_NAMES[ExpressionOption.RANDOM],
+          name_localizations:
+            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.RANDOM],
+          value: ExpressionOption.RANDOM,
         },
       ),
   )
@@ -242,8 +250,14 @@ export async function execute(
     // Get command options
     const text = interaction.options.getString("text");
     const imageAttachment = interaction.options.getAttachment("image");
-    const expression = (interaction.options.getString("expression") ??
-      EmotionType.NORMAL) as EmotionTypeValue;
+    const expressionOption = (interaction.options.getString("expression") ??
+      ExpressionOption.NORMAL) as ExpressionOptionValue;
+
+    // Handle random expression selection
+    const expression: EmotionTypeValue =
+      expressionOption === ExpressionOption.RANDOM
+        ? getRandomEmotion()
+        : (expressionOption as EmotionTypeValue);
     const align = (interaction.options.getString("align") ?? "center") as
       | "left"
       | "center"
