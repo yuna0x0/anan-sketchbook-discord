@@ -57,7 +57,7 @@ pnpm start
 |--------|----------|-------------|
 | `text` | No* | Text to display |
 | `image` | No* | Image to paste |
-| `expression` | No | Facial expression (default: Normal) |
+| `expression` | No | Facial expression (default: Normal, supports Random) |
 | `align` | No | Horizontal alignment |
 | `valign` | No | Vertical alignment |
 | `overlay` | No | Apply overlay effect (default: true) |
@@ -71,7 +71,7 @@ pnpm start
 | Option | Required | Description |
 |--------|----------|-------------|
 | `character` | Yes | Character to display |
-| `expression` | Yes | Expression ID (autocomplete) |
+| `expression` | Yes | Expression ID (autocomplete, supports Random) |
 | `text` | Yes | Dialogue text |
 | `background` | No | Background image ID (autocomplete) |
 | `custom_background` | No | Upload custom background |

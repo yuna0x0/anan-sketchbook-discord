@@ -25,6 +25,7 @@ import {
   BACKGROUNDS,
   getBackgroundIds,
   getExpressionNumber,
+  ExpressionOption,
 } from "../config.js";
 import {
   generateDialogueImage,
@@ -42,43 +43,56 @@ import {
   getResponseMessage,
   getDialogueMessage,
   getLocalizedExpressionName,
+  EXPRESSION_DISPLAY_NAME_LOCALIZATIONS,
 } from "../locales.js";
-
-// Available languages for character name display with English display names
-const NAME_LANGUAGE_DISPLAY: Record<NameConfigLocale, string> = {
-  ja: "Japanese (ja)",
-  "zh-TW": "Traditional Chinese (zh-TW)",
-  "zh-CN": "Simplified Chinese (zh-CN)",
-  en: "English (en)",
-};
 
 // Languages currently supported for name config (ja is default, listed first)
 const NAME_LANGUAGES: NameConfigLocale[] = ["ja", "zh-TW", "zh-CN"];
 
-// Build language choices with localizations
+// Map Discord locale to NameConfigLocale, returns undefined if not supported
+function mapDiscordLocaleToNameLocale(
+  discordLocale: Locale | string,
+): NameConfigLocale | undefined {
+  switch (discordLocale) {
+    case Locale.Japanese:
+      return "ja";
+    case Locale.ChineseTW:
+      return "zh-TW";
+    case Locale.ChineseCN:
+      return "zh-CN";
+    case Locale.EnglishUS:
+    case Locale.EnglishGB:
+      return "en";
+    default:
+      return undefined;
+  }
+}
+
+// Build language choices with localizations (use EnglishUS as default name)
 const languageChoices = NAME_LANGUAGES.map((locale) => ({
-  name: NAME_LANGUAGE_DISPLAY[locale],
+  name: LANGUAGE_CHOICE_LOCALIZATIONS[locale][Locale.EnglishUS]!,
   name_localizations: LANGUAGE_CHOICE_LOCALIZATIONS[locale],
   value: locale,
 }));
 
 // Build character choices with localizations (Discord limit: 25)
+// Use fullName (English) as default, with localized names for other locales
 const characterChoices = Object.entries(CHARACTERS).map(([id, info]) => ({
   name: info.fullName,
   name_localizations: CHARACTER_NAME_LOCALIZATIONS[id as CharacterId],
   value: id,
 }));
 
-// Build font choices with localizations
+// Build font choices with localizations (use EnglishUS as default name)
 const fontChoices = Object.entries(DIALOGUE_FONTS).map(([id, info]) => ({
-  name: info.name,
+  name: FONT_NAME_LOCALIZATIONS[id][Locale.EnglishUS] ?? info.name,
   name_localizations: FONT_NAME_LOCALIZATIONS[id],
   value: id,
 }));
 
-// Build stretch mode choices with localizations
+// Build stretch mode choices with localizations (use EnglishUS as default name)
 const stretchModeChoices = Object.entries(STRETCH_MODES).map(([id, name]) => ({
-  name: name,
+  name: STRETCH_MODE_LOCALIZATIONS[id][Locale.EnglishUS] ?? name,
   name_localizations: STRETCH_MODE_LOCALIZATIONS[id],
   value: id,
 }));
@@ -86,7 +100,7 @@ const stretchModeChoices = Object.entries(STRETCH_MODES).map(([id, name]) => ({
 // Build the slash command
 export const data = new SlashCommandBuilder()
   .setName("dialogue")
-  .setDescription("Generate an in-game style dialogue image")
+  .setDescription(DIALOGUE_COMMAND_DESCRIPTION_LOCALIZATIONS[Locale.EnglishUS]!)
   .setDescriptionLocalizations(DIALOGUE_COMMAND_DESCRIPTION_LOCALIZATIONS)
   // Allow the command to be installed by users (not just guilds)
   .setIntegrationTypes([
@@ -103,7 +117,9 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName("character")
-      .setDescription("The character to display")
+      .setDescription(
+        DIALOGUE_OPTION_LOCALIZATIONS.character[Locale.EnglishUS]!,
+      )
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.character)
       .setRequired(true)
       .addChoices(...characterChoices),
@@ -111,7 +127,9 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName("expression")
-      .setDescription("Character expression (use autocomplete)")
+      .setDescription(
+        DIALOGUE_OPTION_LOCALIZATIONS.expression[Locale.EnglishUS]!,
+      )
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.expression)
       .setRequired(true)
       .setAutocomplete(true),
@@ -119,9 +137,7 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName("text")
-      .setDescription(
-        "The dialogue text (supports emoji and [bracket] highlighting)",
-      )
+      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.text[Locale.EnglishUS]!)
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.text)
       .setRequired(true),
   )
@@ -129,7 +145,9 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName("background")
-      .setDescription("Background image ID (use autocomplete)")
+      .setDescription(
+        DIALOGUE_OPTION_LOCALIZATIONS.background[Locale.EnglishUS]!,
+      )
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.background)
       .setRequired(false)
       .setAutocomplete(true),
@@ -137,7 +155,9 @@ export const data = new SlashCommandBuilder()
   .addAttachmentOption((option) =>
     option
       .setName("custom_background")
-      .setDescription("Upload a custom background image")
+      .setDescription(
+        DIALOGUE_OPTION_LOCALIZATIONS.custom_background[Locale.EnglishUS]!,
+      )
       .setDescriptionLocalizations(
         DIALOGUE_OPTION_LOCALIZATIONS.custom_background,
       )
@@ -146,7 +166,7 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName("stretch")
-      .setDescription("How to fit the background to the canvas")
+      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.stretch[Locale.EnglishUS]!)
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.stretch)
       .setRequired(false)
       .addChoices(...stretchModeChoices),
@@ -154,7 +174,7 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName("font")
-      .setDescription("Font for the dialogue text")
+      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.font[Locale.EnglishUS]!)
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.font)
       .setRequired(false)
       .addChoices(...fontChoices),
@@ -162,7 +182,9 @@ export const data = new SlashCommandBuilder()
   .addIntegerOption((option) =>
     option
       .setName("font_size")
-      .setDescription("Font size for the dialogue text (default: 72)")
+      .setDescription(
+        DIALOGUE_OPTION_LOCALIZATIONS.font_size[Locale.EnglishUS]!,
+      )
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.font_size)
       .setRequired(false)
       .setMinValue(24)
@@ -172,7 +194,7 @@ export const data = new SlashCommandBuilder()
     option
       .setName("highlight")
       .setDescription(
-        "Highlight text in [brackets] with character color (default: True)",
+        DIALOGUE_OPTION_LOCALIZATIONS.highlight[Locale.EnglishUS]!,
       )
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.highlight)
       .setRequired(false),
@@ -180,14 +202,14 @@ export const data = new SlashCommandBuilder()
   .addBooleanOption((option) =>
     option
       .setName("dm")
-      .setDescription("Send the result to your DMs instead of the channel")
+      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.dm[Locale.EnglishUS]!)
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.dm)
       .setRequired(false),
   )
   .addStringOption((option) =>
     option
       .setName("language")
-      .setDescription("Language for the character name display")
+      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.language[Locale.EnglishUS]!)
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.language)
       .setRequired(false)
       .addChoices(...languageChoices),
@@ -211,9 +233,13 @@ export async function autocomplete(
 
     if (!characterId || !CHARACTERS[characterId]) {
       // No character selected yet, show a message
+      const selectCharacterMessage = getDialogueMessage(
+        "selectCharacterFirst",
+        userLocale,
+      );
       await interaction.respond([
         {
-          name: "Please select a character first",
+          name: selectCharacterMessage,
           value: "_none_",
         },
       ]);
@@ -223,9 +249,21 @@ export async function autocomplete(
     const character = CHARACTERS[characterId];
     const searchValue = focusedOption.value.toLowerCase();
 
-    // Create a list of expressions with their localized names
-    const expressionsWithNames = character.expressions.map(
-      (expressionId, index) => {
+    // Get localized random option name from EXPRESSION_DISPLAY_NAME_LOCALIZATIONS
+    const randomLocalizations =
+      EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.RANDOM];
+    const randomName = (randomLocalizations[
+      userLocale as keyof typeof randomLocalizations
+    ] ?? randomLocalizations[Locale.EnglishUS])!;
+
+    // Create a list of expressions with their localized names, starting with Random
+    const expressionsWithNames = [
+      {
+        id: "_random_",
+        localizedName: randomName,
+        displayName: randomName,
+      },
+      ...character.expressions.map((expressionId, index) => {
         const localizedName = getLocalizedExpressionName(
           expressionId,
           userLocale,
@@ -235,8 +273,8 @@ export async function autocomplete(
           localizedName,
           displayName: localizedName,
         };
-      },
-    );
+      }),
+    ];
 
     // Filter expressions that match the search (by ID or localized name)
     const filtered = expressionsWithNames
@@ -321,8 +359,12 @@ export async function execute(
     const fontSize = interaction.options.getInteger("font_size") ?? 72;
     const highlightBrackets =
       interaction.options.getBoolean("highlight") ?? true;
-    const nameLanguage = (interaction.options.getString("language") ??
-      "ja") as NameConfigLocale;
+    const userSpecifiedLanguage = interaction.options.getString(
+      "language",
+    ) as NameConfigLocale | null;
+    // Use user-specified language, or map from Discord locale, or fallback to "ja"
+    const nameLanguage: NameConfigLocale =
+      userSpecifiedLanguage ?? mapDiscordLocaleToNameLocale(locale) ?? "ja";
 
     // Validate character exists
     const character = CHARACTERS[characterId];
@@ -335,8 +377,17 @@ export async function execute(
       return;
     }
 
+    // Handle random expression selection
+    let finalExpressionId = expressionId;
+    if (expressionId === "_random_") {
+      const randomIndex = Math.floor(
+        Math.random() * character.expressions.length,
+      );
+      finalExpressionId = character.expressions[randomIndex];
+    }
+
     // Convert expression name to number
-    const expression = getExpressionNumber(character, expressionId);
+    const expression = getExpressionNumber(character, finalExpressionId);
     if (expression === undefined) {
       await interaction.editReply({
         content: getDialogueMessage("invalidExpression", locale, {

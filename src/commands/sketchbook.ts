@@ -12,7 +12,6 @@ import {
   MessageFlags,
   ApplicationIntegrationType,
   InteractionContextType,
-  Locale,
 } from "discord.js";
 import {
   EmotionTypeValue,
@@ -36,11 +35,12 @@ import {
   getResponseMessage,
   getSketchbookMessage,
 } from "../locales.js";
+import { Locale } from "discord.js";
 
 // Build the slash command with all options
 export const data = new SlashCommandBuilder()
   .setName("sketchbook")
-  .setDescription("Generate an image with Anan holding a sketchbook")
+  .setDescription(COMMAND_DESCRIPTION_LOCALIZATIONS[Locale.EnglishUS]!)
   .setDescriptionLocalizations(COMMAND_DESCRIPTION_LOCALIZATIONS)
   // Allow the command to be installed by users (not just guilds)
   .setIntegrationTypes([
@@ -56,98 +56,126 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName("text")
-      .setDescription("The text to display on the sketchbook")
+      .setDescription(OPTION_DESCRIPTION_LOCALIZATIONS.text[Locale.EnglishUS]!)
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.text)
       .setRequired(false),
   )
   .addAttachmentOption((option) =>
     option
       .setName("image")
-      .setDescription("An image to paste on the sketchbook")
+      .setDescription(OPTION_DESCRIPTION_LOCALIZATIONS.image[Locale.EnglishUS]!)
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.image)
       .setRequired(false),
   )
   .addStringOption((option) =>
     option
       .setName("expression")
-      .setDescription("Anan's facial expression")
+      .setDescription(
+        OPTION_DESCRIPTION_LOCALIZATIONS.expression[Locale.EnglishUS]!,
+      )
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.expression)
       .setRequired(false)
       .addChoices(
         {
-          name: "Normal",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.NORMAL][
+            Locale.EnglishUS
+          ]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.NORMAL],
           value: ExpressionOption.NORMAL,
         },
         {
-          name: "Happy",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.HAPPY][
+            Locale.EnglishUS
+          ]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.HAPPY],
           value: ExpressionOption.HAPPY,
         },
         {
-          name: "Angry",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.ANGRY][
+            Locale.EnglishUS
+          ]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.ANGRY],
           value: ExpressionOption.ANGRY,
         },
         {
-          name: "Speechless",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[
+            ExpressionOption.SPEECHLESS
+          ][Locale.EnglishUS]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SPEECHLESS],
           value: ExpressionOption.SPEECHLESS,
         },
         {
-          name: "Blush",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.BLUSH][
+            Locale.EnglishUS
+          ]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.BLUSH],
           value: ExpressionOption.BLUSH,
         },
         {
-          name: "Yandere",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.YANDERE][
+            Locale.EnglishUS
+          ]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.YANDERE],
           value: ExpressionOption.YANDERE,
         },
         {
-          name: "Closed Eyes",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[
+            ExpressionOption.CLOSED_EYES
+          ][Locale.EnglishUS]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.CLOSED_EYES],
           value: ExpressionOption.CLOSED_EYES,
         },
         {
-          name: "Sad",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SAD][
+            Locale.EnglishUS
+          ]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SAD],
           value: ExpressionOption.SAD,
         },
         {
-          name: "Scared",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SCARED][
+            Locale.EnglishUS
+          ]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SCARED],
           value: ExpressionOption.SCARED,
         },
         {
-          name: "Excited",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.EXCITED][
+            Locale.EnglishUS
+          ]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.EXCITED],
           value: ExpressionOption.EXCITED,
         },
         {
-          name: "Surprised",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[
+            ExpressionOption.SURPRISED
+          ][Locale.EnglishUS]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SURPRISED],
           value: ExpressionOption.SURPRISED,
         },
         {
-          name: "Crying",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.CRYING][
+            Locale.EnglishUS
+          ]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.CRYING],
           value: ExpressionOption.CRYING,
         },
         {
-          name: "(Random)",
+          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.RANDOM][
+            Locale.EnglishUS
+          ]!,
           name_localizations:
             EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.RANDOM],
           value: ExpressionOption.RANDOM,
@@ -157,22 +185,22 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName("align")
-      .setDescription("Horizontal text alignment")
+      .setDescription(OPTION_DESCRIPTION_LOCALIZATIONS.align[Locale.EnglishUS]!)
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.align)
       .setRequired(false)
       .addChoices(
         {
-          name: "Left",
+          name: ALIGN_CHOICE_LOCALIZATIONS.left[Locale.EnglishUS]!,
           name_localizations: ALIGN_CHOICE_LOCALIZATIONS.left,
           value: "left",
         },
         {
-          name: "Center",
+          name: ALIGN_CHOICE_LOCALIZATIONS.center[Locale.EnglishUS]!,
           name_localizations: ALIGN_CHOICE_LOCALIZATIONS.center,
           value: "center",
         },
         {
-          name: "Right",
+          name: ALIGN_CHOICE_LOCALIZATIONS.right[Locale.EnglishUS]!,
           name_localizations: ALIGN_CHOICE_LOCALIZATIONS.right,
           value: "right",
         },
@@ -181,22 +209,24 @@ export const data = new SlashCommandBuilder()
   .addStringOption((option) =>
     option
       .setName("valign")
-      .setDescription("Vertical text alignment")
+      .setDescription(
+        OPTION_DESCRIPTION_LOCALIZATIONS.valign[Locale.EnglishUS]!,
+      )
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.valign)
       .setRequired(false)
       .addChoices(
         {
-          name: "Top",
+          name: VALIGN_CHOICE_LOCALIZATIONS.top[Locale.EnglishUS]!,
           name_localizations: VALIGN_CHOICE_LOCALIZATIONS.top,
           value: "top",
         },
         {
-          name: "Middle",
+          name: VALIGN_CHOICE_LOCALIZATIONS.middle[Locale.EnglishUS]!,
           name_localizations: VALIGN_CHOICE_LOCALIZATIONS.middle,
           value: "middle",
         },
         {
-          name: "Bottom",
+          name: VALIGN_CHOICE_LOCALIZATIONS.bottom[Locale.EnglishUS]!,
           name_localizations: VALIGN_CHOICE_LOCALIZATIONS.bottom,
           value: "bottom",
         },
@@ -205,31 +235,33 @@ export const data = new SlashCommandBuilder()
   .addBooleanOption((option) =>
     option
       .setName("dm")
-      .setDescription("Send the result to your DMs instead of the channel")
+      .setDescription(OPTION_DESCRIPTION_LOCALIZATIONS.dm[Locale.EnglishUS]!)
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.dm)
       .setRequired(false),
   )
   .addBooleanOption((option) =>
     option
       .setName("overlay")
-      .setDescription("Apply the overlay effect (default: True)")
+      .setDescription(
+        OPTION_DESCRIPTION_LOCALIZATIONS.overlay[Locale.EnglishUS]!,
+      )
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.overlay)
       .setRequired(false),
   )
   .addStringOption((option) =>
     option
       .setName("wrap")
-      .setDescription("Text wrapping algorithm")
+      .setDescription(OPTION_DESCRIPTION_LOCALIZATIONS.wrap[Locale.EnglishUS]!)
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.wrap)
       .setRequired(false)
       .addChoices(
         {
-          name: "Greedy (faster)",
+          name: WRAP_CHOICE_LOCALIZATIONS.greedy[Locale.EnglishUS]!,
           name_localizations: WRAP_CHOICE_LOCALIZATIONS.greedy,
           value: "greedy",
         },
         {
-          name: "Knuth-Plass (better quality)",
+          name: WRAP_CHOICE_LOCALIZATIONS.knuth_plass[Locale.EnglishUS]!,
           name_localizations: WRAP_CHOICE_LOCALIZATIONS.knuth_plass,
           value: "knuth_plass",
         },

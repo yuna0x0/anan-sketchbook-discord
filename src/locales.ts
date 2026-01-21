@@ -457,6 +457,13 @@ export const DIALOGUE_OPTION_LOCALIZATIONS: Record<string, LocalizationMap> = {
 
 // Dialogue-specific response messages
 export const DIALOGUE_MESSAGES = {
+  selectCharacterFirst: {
+    [Locale.EnglishUS]: "Please select a character first",
+    [Locale.EnglishGB]: "Please select a character first",
+    [Locale.ChineseTW]: "請先選擇一個角色",
+    [Locale.ChineseCN]: "请先选择一个角色",
+    [Locale.Japanese]: "先にキャラクターを選択してください",
+  },
   unknownCharacter: {
     [Locale.EnglishUS]: "Unknown character: {characterId}",
     [Locale.EnglishGB]: "Unknown character: {characterId}",
