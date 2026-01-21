@@ -371,13 +371,13 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
         },
         {
           text: "ヒ",
-          position: { x: 1143, y: 110 },
+          position: { x: 1123, y: 110 },
           fontColor: { r: 255, g: 255, b: 255 },
           fontSize: 147,
         },
         {
           text: "ロ",
-          position: { x: 1243, y: 175 },
+          position: { x: 1253, y: 175 },
           fontColor: { r: 255, g: 255, b: 255 },
           fontSize: 92,
         },
@@ -821,7 +821,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
         },
         {
           text: "ル",
-          position: { x: 1320, y: 175 },
+          position: { x: 1330, y: 175 },
           fontColor: { r: 255, g: 255, b: 255 },
           fontSize: 92,
         },
@@ -1283,7 +1283,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
         },
         {
           text: "ゴ",
-          position: { x: 1320, y: 175 },
+          position: { x: 1340, y: 175 },
           fontColor: { r: 255, g: 255, b: 255 },
           fontSize: 92,
         },
