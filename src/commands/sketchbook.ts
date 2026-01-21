@@ -20,10 +20,8 @@ import {
   getRandomEmotion,
 } from "../config.js";
 import { generateSketchbookImage } from "../utils/sketchbookGenerator.js";
-import {
-  isImageSupported,
-  getUnsupportedImageError,
-} from "../utils/imageUtils.js";
+import { isImageSupported } from "../utils/imageUtils.js";
+import { getImageFormatErrorMessage } from "../locales.js";
 import { WrapAlgorithm } from "../utils/textWrapper.js";
 import {
   COMMAND_DESCRIPTION_LOCALIZATIONS,
@@ -339,7 +337,7 @@ export async function execute(
       // Validate the actual image format from magic bytes
       if (!isImageSupported(contentImageBuffer)) {
         await interaction.editReply({
-          content: getUnsupportedImageError(locale),
+          content: getImageFormatErrorMessage(locale),
         });
         return;
       }

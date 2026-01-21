@@ -84,6 +84,39 @@ export function getResponseMessage(
 }
 
 // =============================================================================
+// Image Format Error Messages
+// =============================================================================
+
+/**
+ * Localized messages for unsupported image format errors
+ */
+export const IMAGE_FORMAT_ERROR_MESSAGES = {
+  [Locale.EnglishUS]:
+    "Unsupported image format. Please use PNG, JPEG, GIF, BMP, WebP, TIFF, or AVIF.",
+  [Locale.EnglishGB]:
+    "Unsupported image format. Please use PNG, JPEG, GIF, BMP, WebP, TIFF, or AVIF.",
+  [Locale.ChineseTW]:
+    "不支援的圖片格式。請使用 PNG、JPEG、GIF、BMP、WebP、TIFF 或 AVIF。",
+  [Locale.ChineseCN]:
+    "不支持的图片格式。请使用 PNG、JPEG、GIF、BMP、WebP、TIFF 或 AVIF。",
+  [Locale.Japanese]:
+    "サポートされていない画像形式です。PNG、JPEG、GIF、BMP、WebP、TIFF、またはAVIFをご使用ください。",
+} as const;
+
+/**
+ * Get a localized error message for unsupported image types
+ * @param locale - The Discord locale to use (defaults to English US)
+ */
+export function getImageFormatErrorMessage(locale?: Locale): string {
+  if (locale && locale in IMAGE_FORMAT_ERROR_MESSAGES) {
+    return IMAGE_FORMAT_ERROR_MESSAGES[
+      locale as keyof typeof IMAGE_FORMAT_ERROR_MESSAGES
+    ];
+  }
+  return IMAGE_FORMAT_ERROR_MESSAGES[Locale.EnglishUS];
+}
+
+// =============================================================================
 // Sketchbook Command Localizations
 // =============================================================================
 

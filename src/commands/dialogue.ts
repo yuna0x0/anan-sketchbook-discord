@@ -29,10 +29,8 @@ import {
   FALLBACK_NAME_LOCALE,
 } from "../config.js";
 import { generateDialogueImage } from "../utils/dialogueGenerator.js";
-import {
-  isImageSupported,
-  getUnsupportedImageError,
-} from "../utils/imageUtils.js";
+import { isImageSupported } from "../utils/imageUtils.js";
+import { getImageFormatErrorMessage } from "../locales.js";
 import {
   DIALOGUE_COMMAND_DESCRIPTION_LOCALIZATIONS,
   DIALOGUE_OPTION_LOCALIZATIONS,
@@ -427,7 +425,7 @@ export async function execute(
       // Validate the actual image format
       if (!isImageSupported(customBackgroundBuffer)) {
         await interaction.editReply({
-          content: getUnsupportedImageError(locale),
+          content: getImageFormatErrorMessage(locale),
         });
         return;
       }

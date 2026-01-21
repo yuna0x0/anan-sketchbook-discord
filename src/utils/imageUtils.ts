@@ -8,6 +8,7 @@ import { loadImage, Image } from "canvas";
 import sharp from "sharp";
 import { Locale } from "discord.js";
 import { RGBColor } from "../config.js";
+import { getImageFormatErrorMessage } from "../locales.js";
 
 // =============================================================================
 // Image Format Types
@@ -27,26 +28,6 @@ export type ConvertibleType = "webp" | "tiff" | "avif";
  * All supported image types
  */
 export type SupportedImageType = CanvasNativeType | ConvertibleType;
-
-// =============================================================================
-// Localized Error Messages
-// =============================================================================
-
-/**
- * Localized messages for unsupported image format errors
- */
-export const IMAGE_FORMAT_ERROR_MESSAGES = {
-  [Locale.EnglishUS]:
-    "Unsupported image format. Please use PNG, JPEG, GIF, BMP, WebP, TIFF, or AVIF.",
-  [Locale.EnglishGB]:
-    "Unsupported image format. Please use PNG, JPEG, GIF, BMP, WebP, TIFF, or AVIF.",
-  [Locale.ChineseTW]:
-    "不支援的圖片格式。請使用 PNG、JPEG、GIF、BMP、WebP、TIFF 或 AVIF。",
-  [Locale.ChineseCN]:
-    "不支持的图片格式。请使用 PNG、JPEG、GIF、BMP、WebP、TIFF 或 AVIF。",
-  [Locale.Japanese]:
-    "サポートされていない画像形式です。PNG、JPEG、GIF、BMP、WebP、TIFF、またはAVIFをご使用ください。",
-} as const;
 
 // =============================================================================
 // RGB Color Utilities
@@ -135,7 +116,7 @@ export function detectImageType(buffer: Buffer): SupportedImageType | null {
     const ftypStart = buffer.indexOf(Buffer.from([0x66, 0x74, 0x79, 0x70]));
     if (ftypStart !== -1 && ftypStart <= 8) {
       const brand = buffer
-        .slice(ftypStart + 4, ftypStart + 8)
+        .subarray(ftypStart + 4, ftypStart + 8)
         .toString("ascii");
       if (brand === "avif" || brand === "avis") {
         return "avif";
@@ -173,19 +154,6 @@ export function isImageSupported(buffer: Buffer): boolean {
   return detectImageType(buffer) !== null;
 }
 
-/**
- * Get a localized error message for unsupported image types
- * @param locale - The Discord locale to use (defaults to English US)
- */
-export function getUnsupportedImageError(locale?: Locale): string {
-  if (locale && locale in IMAGE_FORMAT_ERROR_MESSAGES) {
-    return IMAGE_FORMAT_ERROR_MESSAGES[
-      locale as keyof typeof IMAGE_FORMAT_ERROR_MESSAGES
-    ];
-  }
-  return IMAGE_FORMAT_ERROR_MESSAGES[Locale.EnglishUS];
-}
-
 // =============================================================================
 // Image Loading
 // =============================================================================
@@ -208,7 +176,7 @@ export async function loadImageFromBuffer(
 ): Promise<Image> {
   const imageType = detectImageType(buffer);
   if (!imageType) {
-    throw new Error(getUnsupportedImageError(locale));
+    throw new Error(getImageFormatErrorMessage(locale));
   }
 
   // Convert non-native formats (WebP, TIFF, AVIF) to PNG for canvas compatibility
