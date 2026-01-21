@@ -519,37 +519,29 @@ export function getDialogueMessage(
 
 // Language choice localizations for the name display
 // Format: "Language Name (code)"
-export const LANGUAGE_CHOICE_LOCALIZATIONS: Record<
-  NameConfigLocale,
-  LocalizationMap
+export const LANGUAGE_CHOICE_LOCALIZATIONS: Partial<
+  Record<NameConfigLocale, LocalizationMap>
 > = {
-  "zh-CN": {
+  [Locale.ChineseCN]: {
     [Locale.EnglishUS]: "Simplified Chinese (zh-CN)",
     [Locale.EnglishGB]: "Simplified Chinese (zh-CN)",
     [Locale.ChineseTW]: "簡體中文 (zh-CN)",
     [Locale.ChineseCN]: "简体中文 (zh-CN)",
     [Locale.Japanese]: "簡体字中国語 (zh-CN)",
   },
-  "zh-TW": {
+  [Locale.ChineseTW]: {
     [Locale.EnglishUS]: "Traditional Chinese (zh-TW)",
     [Locale.EnglishGB]: "Traditional Chinese (zh-TW)",
     [Locale.ChineseTW]: "繁體中文 (zh-TW)",
     [Locale.ChineseCN]: "繁体中文 (zh-TW)",
     [Locale.Japanese]: "繁体字中国語 (zh-TW)",
   },
-  ja: {
+  [Locale.Japanese]: {
     [Locale.EnglishUS]: "Japanese (ja)",
     [Locale.EnglishGB]: "Japanese (ja)",
     [Locale.ChineseTW]: "日文 (ja)",
     [Locale.ChineseCN]: "日文 (ja)",
     [Locale.Japanese]: "日本語 (ja)",
-  },
-  en: {
-    [Locale.EnglishUS]: "English (en)",
-    [Locale.EnglishGB]: "English (en)",
-    [Locale.ChineseTW]: "英文 (en)",
-    [Locale.ChineseCN]: "英文 (en)",
-    [Locale.Japanese]: "英語 (en)",
   },
 };
 

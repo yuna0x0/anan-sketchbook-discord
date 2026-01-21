@@ -79,7 +79,7 @@ pnpm start
 | `font` | No | Font selection |
 | `font_size` | No | Font size (24-120) |
 | `highlight` | No | Highlight bracketed text |
-| `language` | No | Character name language (default: ja) |
+| `language` | No | Character name language (auto-detects from Discord locale, fallback: Japanese) |
 | `dm` | No | Send to DMs |
 
 ## Localization

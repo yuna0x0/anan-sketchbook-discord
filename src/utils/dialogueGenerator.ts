@@ -28,6 +28,7 @@ import {
   getDialogueOverlayPath,
   getCharacter,
   getNameConfig,
+  FALLBACK_NAME_LOCALE,
 } from "../config.js";
 import {
   parseTextWithEmoji,
@@ -306,7 +307,7 @@ function drawBackground(
 function drawCharacterName(
   ctx: CanvasRenderingContext2D,
   characterId: CharacterId,
-  locale: NameConfigLocale = "zh-CN",
+  locale: NameConfigLocale = FALLBACK_NAME_LOCALE,
 ): void {
   const character = getCharacter(characterId);
   if (!character) return;
@@ -577,7 +578,7 @@ export async function generateDialogueImage(
     fontId = "stzhongs",
     fontSize = DIALOGUE_CONFIG.defaultFontSize,
     highlightBrackets = true,
-    nameLocale = "zh-CN",
+    nameLocale = FALLBACK_NAME_LOCALE,
   } = options;
 
   // Ensure fonts are registered

@@ -1,6 +1,7 @@
 import { fileURLToPath } from "url";
 import { dirname, join, resolve } from "path";
 import { existsSync } from "fs";
+import { Locale } from "discord.js";
 
 // Get the directory of the current module
 const __filename = fileURLToPath(import.meta.url);
@@ -147,16 +148,13 @@ export interface NameTextConfig {
   fontSize: number;
 }
 
-// Supported locales for name configuration
-export type NameConfigLocale = "zh-CN" | "zh-TW" | "ja" | "en";
+// Supported locales for name configuration (using Discord Locale)
+export type NameConfigLocale = Locale;
 
-// Localized name configurations
-export interface LocalizedNameConfig {
-  "zh-CN": NameTextConfig[];
-  "zh-TW"?: NameTextConfig[];
-  ja?: NameTextConfig[];
-  en?: NameTextConfig[];
-}
+// Localized name configurations (partial record of Discord Locale to name config)
+export type LocalizedNameConfig = Partial<
+  Record<NameConfigLocale, NameTextConfig[]>
+>;
 
 // Character information
 export interface CharacterInfo {
@@ -182,15 +180,19 @@ export function getExpressionNames(character: CharacterInfo): string[] {
   return character.expressions;
 }
 
-// Default locale for name configuration
-export const DEFAULT_NAME_LOCALE: NameConfigLocale = "ja";
+// Fallback locale when requested locale is not available for a character
+export const FALLBACK_NAME_LOCALE: NameConfigLocale = Locale.Japanese;
 
-// Get name config for a specific locale, falling back to zh-CN
+// Get name config for a specific locale, falling back to FALLBACK_NAME_LOCALE
 export function getNameConfig(
   character: CharacterInfo,
-  locale: NameConfigLocale = DEFAULT_NAME_LOCALE,
+  locale: NameConfigLocale,
 ): NameTextConfig[] {
-  return character.nameConfig[locale] ?? character.nameConfig["zh-CN"];
+  return (
+    character.nameConfig[locale] ??
+    character.nameConfig[FALLBACK_NAME_LOCALE] ??
+    []
+  );
 }
 
 // All available characters
@@ -211,7 +213,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 253, g: 145, b: 175 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "樱",
           position: { x: 759, y: 73 },
@@ -237,7 +239,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "櫻",
           position: { x: 759, y: 73 },
@@ -263,7 +265,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "桜",
           position: { x: 759, y: 73 },
@@ -305,7 +307,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 239, g: 79, b: 84 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "二",
           position: { x: 759, y: 63 },
@@ -331,7 +333,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "二",
           position: { x: 759, y: 63 },
@@ -357,7 +359,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "二",
           position: { x: 759, y: 63 },
@@ -400,7 +402,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 137, g: 177, b: 251 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "橘",
           position: { x: 759, y: 73 },
@@ -420,7 +422,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "橘",
           position: { x: 759, y: 73 },
@@ -440,7 +442,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "橘",
           position: { x: 759, y: 73 },
@@ -475,7 +477,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 169, g: 199, b: 30 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "远",
           position: { x: 759, y: 73 },
@@ -501,7 +503,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "遠",
           position: { x: 759, y: 73 },
@@ -527,7 +529,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "遠",
           position: { x: 759, y: 73 },
@@ -572,7 +574,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 159, g: 145, b: 251 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "夏",
           position: { x: 759, y: 73 },
@@ -598,7 +600,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "夏",
           position: { x: 759, y: 73 },
@@ -624,7 +626,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "夏",
           position: { x: 759, y: 73 },
@@ -678,7 +680,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 195, g: 209, b: 231 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "月",
           position: { x: 759, y: 63 },
@@ -698,7 +700,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 147,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "月",
           position: { x: 759, y: 63 },
@@ -718,7 +720,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 147,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "月",
           position: { x: 759, y: 63 },
@@ -754,7 +756,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 227, g: 185, b: 175 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "冰",
           position: { x: 759, y: 73 },
@@ -780,7 +782,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "冰",
           position: { x: 759, y: 73 },
@@ -806,7 +808,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "氷",
           position: { x: 759, y: 73 },
@@ -848,7 +850,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 104, g: 223, b: 231 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "城",
           position: { x: 759, y: 73 },
@@ -874,7 +876,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "城",
           position: { x: 759, y: 73 },
@@ -900,7 +902,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "城",
           position: { x: 759, y: 73 },
@@ -943,7 +945,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 253, g: 177, b: 88 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "莲",
           position: { x: 759, y: 73 },
@@ -969,7 +971,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "蓮",
           position: { x: 759, y: 73 },
@@ -995,7 +997,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "蓮",
           position: { x: 759, y: 73 },
@@ -1035,7 +1037,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 235, g: 207, b: 139 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "佐",
           position: { x: 759, y: 73 },
@@ -1061,7 +1063,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "佐",
           position: { x: 759, y: 73 },
@@ -1087,7 +1089,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "佐",
           position: { x: 759, y: 73 },
@@ -1128,7 +1130,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 131, g: 143, b: 147 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "黑",
           position: { x: 759, y: 63 },
@@ -1154,7 +1156,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "黑",
           position: { x: 759, y: 63 },
@@ -1180,7 +1182,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "黒",
           position: { x: 759, y: 63 },
@@ -1221,7 +1223,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 185, g: 124, b: 235 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "宝",
           position: { x: 759, y: 73 },
@@ -1247,7 +1249,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "寶",
           position: { x: 759, y: 73 },
@@ -1273,7 +1275,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "宝",
           position: { x: 759, y: 73 },
@@ -1315,7 +1317,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 235, g: 75, b: 60 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "紫",
           position: { x: 759, y: 73 },
@@ -1341,7 +1343,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "紫",
           position: { x: 759, y: 73 },
@@ -1367,7 +1369,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "紫",
           position: { x: 759, y: 73 },
@@ -1408,7 +1410,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
     font: "stzhongs",
     themeColor: { r: 251, g: 114, b: 78 },
     nameConfig: {
-      "zh-CN": [
+      [Locale.ChineseCN]: [
         {
           text: "泽",
           position: { x: 759, y: 73 },
@@ -1434,7 +1436,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      "zh-TW": [
+      [Locale.ChineseTW]: [
         {
           text: "澤",
           position: { x: 759, y: 73 },
@@ -1460,7 +1462,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
           fontSize: 92,
         },
       ],
-      ja: [
+      [Locale.Japanese]: [
         {
           text: "沢",
           position: { x: 759, y: 73 },

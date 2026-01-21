@@ -26,6 +26,7 @@ import {
   getBackgroundIds,
   getExpressionNumber,
   ExpressionOption,
+  FALLBACK_NAME_LOCALE,
 } from "../config.js";
 import {
   generateDialogueImage,
@@ -46,31 +47,23 @@ import {
   EXPRESSION_DISPLAY_NAME_LOCALIZATIONS,
 } from "../locales.js";
 
-// Languages currently supported for name config (ja is default, listed first)
-const NAME_LANGUAGES: NameConfigLocale[] = ["ja", "zh-TW", "zh-CN"];
+// Supported locales for name display in dialogue (subset of Discord Locale)
+const SUPPORTED_NAME_LOCALES: NameConfigLocale[] = [
+  Locale.Japanese,
+  Locale.ChineseTW,
+  Locale.ChineseCN,
+];
 
-// Map Discord locale to NameConfigLocale, returns undefined if not supported
-function mapDiscordLocaleToNameLocale(
-  discordLocale: Locale | string,
-): NameConfigLocale | undefined {
-  switch (discordLocale) {
-    case Locale.Japanese:
-      return "ja";
-    case Locale.ChineseTW:
-      return "zh-TW";
-    case Locale.ChineseCN:
-      return "zh-CN";
-    case Locale.EnglishUS:
-    case Locale.EnglishGB:
-      return "en";
-    default:
-      return undefined;
-  }
+// Check if a Discord locale is supported for name display
+function isSupportedNameLocale(
+  locale: Locale | string,
+): locale is NameConfigLocale {
+  return SUPPORTED_NAME_LOCALES.includes(locale as NameConfigLocale);
 }
 
 // Build language choices with localizations (use EnglishUS as default name)
-const languageChoices = NAME_LANGUAGES.map((locale) => ({
-  name: LANGUAGE_CHOICE_LOCALIZATIONS[locale][Locale.EnglishUS]!,
+const languageChoices = SUPPORTED_NAME_LOCALES.map((locale) => ({
+  name: LANGUAGE_CHOICE_LOCALIZATIONS[locale]?.[Locale.EnglishUS] ?? locale,
   name_localizations: LANGUAGE_CHOICE_LOCALIZATIONS[locale],
   value: locale,
 }));
@@ -362,9 +355,10 @@ export async function execute(
     const userSpecifiedLanguage = interaction.options.getString(
       "language",
     ) as NameConfigLocale | null;
-    // Use user-specified language, or map from Discord locale, or fallback to "ja"
+    // Use user-specified language, or user's Discord locale if supported, or fallback to Japanese
     const nameLanguage: NameConfigLocale =
-      userSpecifiedLanguage ?? mapDiscordLocaleToNameLocale(locale) ?? "ja";
+      userSpecifiedLanguage ??
+      (isSupportedNameLocale(locale) ? locale : FALLBACK_NAME_LOCALE);
 
     // Validate character exists
     const character = CHARACTERS[characterId];
