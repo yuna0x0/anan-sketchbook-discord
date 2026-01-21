@@ -201,7 +201,7 @@ function parseTextForHighlighting(text: string): TextSegmentWithColor[] {
   for (let i = 0; i < text.length; i++) {
     const char = text[i];
 
-    if (char === "[" || char === "\u3010") {
+    if (char === "[" || char === "【") {
       // Opening bracket
       if (currentText) {
         segments.push({ text: currentText, isHighlighted: inBracket });
@@ -209,7 +209,7 @@ function parseTextForHighlighting(text: string): TextSegmentWithColor[] {
       }
       inBracket = true;
       currentText += char;
-    } else if (char === "]" || char === "\u3011") {
+    } else if (char === "]" || char === "】") {
       // Closing bracket
       currentText += char;
       segments.push({ text: currentText, isHighlighted: true });
@@ -365,7 +365,7 @@ async function drawTextWithEmojis(
             // Update bracket state
             if (
               colorSegment.text.startsWith("[") ||
-              colorSegment.text.startsWith("\u3010")
+              colorSegment.text.startsWith("【")
             ) {
               globalInBracket = true;
             }
@@ -380,7 +380,7 @@ async function drawTextWithEmojis(
 
             if (
               colorSegment.text.endsWith("]") ||
-              colorSegment.text.endsWith("\u3011")
+              colorSegment.text.endsWith("】")
             ) {
               globalInBracket = false;
             }
