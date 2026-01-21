@@ -1,4 +1,4 @@
-# Manosaba Discord Bot
+# Natsume Anan Sketchbook (Manosaba Discord Bot)
 
 A Discord bot for [Magical Girl Witch Trials (Manosaba)](https://store.steampowered.com/app/3101040/Magical_Girl_Witch_Trials/) that generates sketchbook images and in-game style dialogue images.
 
@@ -17,8 +17,8 @@ A Discord bot for [Magical Girl Witch Trials (Manosaba)](https://store.steampowe
 ## Installation
 
 ```bash
-git clone https://github.com/yuna0x0/manosaba-discord-bot.git
-cd manosaba-discord-bot
+git clone https://github.com/yuna0x0/anan-sketchbook-discord.git
+cd anan-sketchbook-discord
 pnpm install
 cp .env.example .env
 ```
