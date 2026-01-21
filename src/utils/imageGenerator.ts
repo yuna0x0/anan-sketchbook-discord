@@ -10,10 +10,9 @@ import {
   registerFont,
   CanvasRenderingContext2D,
   Image,
-  Canvas,
 } from "canvas";
 import sharp from "sharp";
-import { readFileSync, existsSync } from "fs";
+import { existsSync } from "fs";
 import {
   SKETCHBOOK_CONFIG,
   getAssetPath,
@@ -33,7 +32,6 @@ import {
   parseTextWithEmoji,
   loadEmojiImage,
   preloadEmojis,
-  TextSegment,
   isEmojiOnlyText,
   countEmojis,
 } from "./emojiRenderer.js";

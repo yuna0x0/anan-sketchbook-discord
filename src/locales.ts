@@ -7,7 +7,6 @@
 import { LocalizationMap } from "discord.js";
 import {
   EmotionType,
-  EmotionTypeValue,
   ExpressionOption,
   ExpressionOptionValue,
 } from "./config.js";
