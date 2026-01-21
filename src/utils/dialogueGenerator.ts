@@ -6,21 +6,17 @@
 
 import {
   createCanvas,
-  loadImage,
   registerFont,
   CanvasRenderingContext2D,
   Image,
 } from "canvas";
-import sharp from "sharp";
 import { existsSync } from "fs";
 import {
   DIALOGUE_CONFIG,
   DIALOGUE_FONTS,
-  CHARACTERS,
   CharacterId,
   DialogueFontId,
   StretchMode,
-  RGBColor,
   NameConfigLocale,
   getCharacterImagePath,
   getBackgroundImagePath,
@@ -35,6 +31,12 @@ import {
   loadEmojiImage,
   preloadEmojis,
 } from "./emojiRenderer.js";
+import {
+  rgbToCss,
+  loadImageFromPath,
+  loadImageFromBuffer,
+} from "./imageUtils.js";
+import { RGBColor } from "../config.js";
 
 // Track registered fonts
 const registeredFonts = new Set<string>();
@@ -63,160 +65,6 @@ function ensureAllFontsRegistered(): void {
   for (const fontId of Object.keys(DIALOGUE_FONTS) as DialogueFontId[]) {
     ensureDialogueFontRegistered(fontId);
   }
-}
-
-/**
- * Convert RGB color to CSS string
- */
-function rgbToCss(color: RGBColor): string {
-  return `rgb(${color.r}, ${color.g}, ${color.b})`;
-}
-
-/**
- * Supported canvas-native image types
- */
-type CanvasNativeType = "png" | "jpeg" | "gif" | "bmp";
-
-/**
- * Image types that need conversion to PNG
- */
-type ConvertibleType = "webp" | "tiff" | "avif";
-
-/**
- * All supported image types
- */
-type SupportedImageType = CanvasNativeType | ConvertibleType;
-
-/**
- * Detect image type from buffer magic bytes
- */
-function detectImageType(buffer: Buffer): SupportedImageType | null {
-  if (buffer.length < 12) return null;
-
-  // PNG: 89 50 4E 47
-  if (
-    buffer[0] === 0x89 &&
-    buffer[1] === 0x50 &&
-    buffer[2] === 0x4e &&
-    buffer[3] === 0x47
-  ) {
-    return "png";
-  }
-
-  // JPEG: FF D8 FF
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-    return "jpeg";
-  }
-
-  // GIF: 47 49 46 38
-  if (
-    buffer[0] === 0x47 &&
-    buffer[1] === 0x49 &&
-    buffer[2] === 0x46 &&
-    buffer[3] === 0x38
-  ) {
-    return "gif";
-  }
-
-  // BMP: 42 4D
-  if (buffer[0] === 0x42 && buffer[1] === 0x4d) {
-    return "bmp";
-  }
-
-  // WebP: 52 49 46 46 ... 57 45 42 50
-  if (
-    buffer[0] === 0x52 &&
-    buffer[1] === 0x49 &&
-    buffer[2] === 0x46 &&
-    buffer[3] === 0x46 &&
-    buffer[8] === 0x57 &&
-    buffer[9] === 0x45 &&
-    buffer[10] === 0x42 &&
-    buffer[11] === 0x50
-  ) {
-    return "webp";
-  }
-
-  // TIFF: 49 49 2A 00 or 4D 4D 00 2A
-  if (
-    (buffer[0] === 0x49 &&
-      buffer[1] === 0x49 &&
-      buffer[2] === 0x2a &&
-      buffer[3] === 0x00) ||
-    (buffer[0] === 0x4d &&
-      buffer[1] === 0x4d &&
-      buffer[2] === 0x00 &&
-      buffer[3] === 0x2a)
-  ) {
-    return "tiff";
-  }
-
-  // AVIF: ... 66 74 79 70 61 76 69 66
-  if (buffer.length >= 12) {
-    const ftypStart = buffer.indexOf(Buffer.from([0x66, 0x74, 0x79, 0x70]));
-    if (ftypStart !== -1 && ftypStart <= 8) {
-      const brand = buffer
-        .slice(ftypStart + 4, ftypStart + 8)
-        .toString("ascii");
-      if (brand === "avif" || brand === "avis") {
-        return "avif";
-      }
-    }
-  }
-
-  return null;
-}
-
-/**
- * Check if image type needs conversion
- */
-function needsConversion(type: SupportedImageType): type is ConvertibleType {
-  return type === "webp" || type === "tiff" || type === "avif";
-}
-
-/**
- * Convert image buffer to PNG using sharp
- */
-async function convertToPng(buffer: Buffer): Promise<Buffer> {
-  return sharp(buffer).png().toBuffer();
-}
-
-/**
- * Check if an image buffer is supported
- */
-export function isImageSupported(buffer: Buffer): boolean {
-  return detectImageType(buffer) !== null;
-}
-
-/**
- * Get error message for unsupported image
- */
-export function getUnsupportedImageError(): string {
-  return "Unsupported image format. Please use PNG, JPEG, GIF, BMP, WebP, TIFF, or AVIF.";
-}
-
-/**
- * Load image from file path
- */
-async function loadImageFromPath(path: string): Promise<Image> {
-  return loadImage(path);
-}
-
-/**
- * Load image from buffer, converting if necessary
- */
-async function loadImageFromBuffer(buffer: Buffer): Promise<Image> {
-  const imageType = detectImageType(buffer);
-  if (!imageType) {
-    throw new Error("Unsupported image format");
-  }
-
-  if (needsConversion(imageType)) {
-    const convertedBuffer = await convertToPng(buffer);
-    return loadImage(convertedBuffer);
-  }
-
-  return loadImage(buffer);
 }
 
 /**

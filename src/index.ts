@@ -14,9 +14,11 @@ import {
   Interaction,
   AutocompleteInteraction,
   ChatInputCommandInteraction,
+  Locale,
 } from "discord.js";
 import { config } from "dotenv";
 import { commands } from "./commands/index.js";
+import { getResponseMessage } from "./locales.js";
 
 // Load environment variables from .env file
 config();
@@ -99,8 +101,9 @@ async function handleChatInputCommand(
   } catch (error) {
     console.error(`Error executing command /${commandName}:`, error);
 
-    // Try to respond with an error message
-    const errorMessage = "There was an error while executing this command.";
+    // Try to respond with a localized error message
+    const locale = interaction.locale || Locale.EnglishUS;
+    const errorMessage = getResponseMessage("genericError", locale);
 
     try {
       if (interaction.replied || interaction.deferred) {

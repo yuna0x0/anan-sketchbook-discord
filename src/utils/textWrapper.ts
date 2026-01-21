@@ -7,6 +7,7 @@
 
 import { CanvasRenderingContext2D } from "canvas";
 import twemojiModule, { Twemoji } from "@twemoji/api";
+import { RGBColor } from "../config.js";
 
 // Cast to proper type for runtime usage
 const twemoji = twemojiModule as unknown as Twemoji;
@@ -50,15 +51,6 @@ function splitIntoUnits(text: string): string[] {
   }
 
   return units;
-}
-
-/**
- * RGB color type
- */
-export interface RGBColor {
-  r: number;
-  g: number;
-  b: number;
 }
 
 /**

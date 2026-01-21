@@ -4,14 +4,7 @@
  * Ported from the Python implementation with adaptations for Node.js canvas.
  */
 
-import {
-  createCanvas,
-  loadImage,
-  registerFont,
-  CanvasRenderingContext2D,
-  Image,
-} from "canvas";
-import sharp from "sharp";
+import { createCanvas, registerFont, CanvasRenderingContext2D } from "canvas";
 import { existsSync } from "fs";
 import {
   SKETCHBOOK_CONFIG,
@@ -25,7 +18,6 @@ import {
   measureTextBlock,
   parseColorSegments,
   measureTextWidth,
-  RGBColor,
   WrapAlgorithm,
 } from "./textWrapper.js";
 import {
@@ -35,6 +27,12 @@ import {
   isEmojiOnlyText,
   countEmojis,
 } from "./emojiRenderer.js";
+import {
+  rgbToCss,
+  loadImageFromPath,
+  loadImageFromBuffer,
+} from "./imageUtils.js";
+import { RGBColor } from "../config.js";
 
 /**
  * Horizontal alignment options
@@ -45,6 +43,9 @@ export type HAlign = "left" | "center" | "right";
  * Vertical alignment options
  */
 export type VAlign = "top" | "middle" | "bottom";
+
+// Flag to track if font has been registered
+let fontRegistered = false;
 
 /**
  * Options for generating sketchbook image with text
@@ -94,9 +95,6 @@ export interface CombinedImageOptions {
   useOverlay?: boolean;
 }
 
-// Flag to track if font has been registered
-let fontRegistered = false;
-
 /**
  * Register the custom font for text rendering
  */
@@ -110,132 +108,6 @@ function ensureFontRegistered(): void {
     registerFont(fontPath, { family: "SketchbookFont" });
     fontRegistered = true;
   }
-}
-
-/**
- * Convert RGB color to CSS color string
- */
-function rgbToCss(color: RGBColor): string {
-  return `rgb(${color.r}, ${color.g}, ${color.b})`;
-}
-
-/**
- * Image types natively supported by node-canvas
- */
-type CanvasNativeType = "png" | "jpeg" | "gif";
-
-/**
- * Image types that can be converted to PNG via sharp
- */
-type ConvertibleType = "webp";
-
-/**
- * All supported image types
- */
-type SupportedImageType = CanvasNativeType | ConvertibleType;
-
-/**
- * Detect image type from buffer magic bytes
- * Returns the image type if supported, or null if unsupported/unknown
- */
-function detectImageType(buffer: Buffer): SupportedImageType | null {
-  if (buffer.length < 12) {
-    return null;
-  }
-
-  // PNG: 89 50 4E 47 (‰PNG)
-  if (
-    buffer[0] === 0x89 &&
-    buffer[1] === 0x50 &&
-    buffer[2] === 0x4e &&
-    buffer[3] === 0x47
-  ) {
-    return "png";
-  }
-
-  // JPEG: FF D8 FF
-  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
-    return "jpeg";
-  }
-
-  // GIF: 47 49 46 38 (GIF8)
-  if (
-    buffer[0] === 0x47 &&
-    buffer[1] === 0x49 &&
-    buffer[2] === 0x46 &&
-    buffer[3] === 0x38
-  ) {
-    return "gif";
-  }
-
-  // WebP: 52 49 46 46 ... 57 45 42 50 (RIFF....WEBP)
-  if (
-    buffer[0] === 0x52 &&
-    buffer[1] === 0x49 &&
-    buffer[2] === 0x46 &&
-    buffer[3] === 0x46 &&
-    buffer[8] === 0x57 &&
-    buffer[9] === 0x45 &&
-    buffer[10] === 0x42 &&
-    buffer[11] === 0x50
-  ) {
-    return "webp";
-  }
-
-  return null;
-}
-
-/**
- * Check if an image type needs conversion for canvas compatibility
- */
-function needsConversion(imageType: SupportedImageType): boolean {
-  return imageType === "webp";
-}
-
-/**
- * Convert an image buffer to PNG format using sharp
- */
-async function convertToPng(buffer: Buffer): Promise<Buffer> {
-  return sharp(buffer).png().toBuffer();
-}
-
-/**
- * Check if an image buffer is a supported format
- */
-export function isImageSupported(buffer: Buffer): boolean {
-  return detectImageType(buffer) !== null;
-}
-
-/**
- * Get a user-friendly error message for unsupported image types
- */
-export function getUnsupportedImageError(): string {
-  return "Unsupported image format. Please use PNG, JPEG, GIF, or WebP images.";
-}
-
-/**
- * Load an image from file path
- */
-async function loadImageFromPath(imagePath: string): Promise<Image> {
-  return loadImage(imagePath);
-}
-
-/**
- * Load an image from buffer with format validation and conversion if needed
- */
-async function loadImageFromBuffer(buffer: Buffer): Promise<Image> {
-  const imageType = detectImageType(buffer);
-  if (!imageType) {
-    throw new Error(getUnsupportedImageError());
-  }
-
-  // Convert WebP (and other non-native formats) to PNG for canvas compatibility
-  if (needsConversion(imageType)) {
-    const convertedBuffer = await convertToPng(buffer);
-    return loadImage(convertedBuffer);
-  }
-
-  return loadImage(buffer);
 }
 
 /**

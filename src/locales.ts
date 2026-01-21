@@ -41,13 +41,15 @@ export const RESPONSE_MESSAGES = {
   },
   imageNotSupported: {
     [Locale.EnglishUS]:
-      "The attached file must be an image (PNG, JPEG, GIF, or WebP).",
+      "The attached file must be an image (PNG, JPEG, GIF, BMP, WebP, TIFF, or AVIF).",
     [Locale.EnglishGB]:
-      "The attached file must be an image (PNG, JPEG, GIF, or WebP).",
-    [Locale.ChineseTW]: "附加的檔案必須是圖片（PNG、JPEG、GIF 或 WebP）。",
-    [Locale.ChineseCN]: "附加的文件必须是图片（PNG、JPEG、GIF 或 WebP）。",
+      "The attached file must be an image (PNG, JPEG, GIF, BMP, WebP, TIFF, or AVIF).",
+    [Locale.ChineseTW]:
+      "附加的檔案必須是圖片（PNG、JPEG、GIF、BMP、WebP、TIFF 或 AVIF）。",
+    [Locale.ChineseCN]:
+      "附加的文件必须是图片（PNG、JPEG、GIF、BMP、WebP、TIFF 或 AVIF）。",
     [Locale.Japanese]:
-      "添付ファイルは画像である必要があります（PNG、JPEG、GIF、またはWebP）。",
+      "添付ファイルは画像である必要があります（PNG、JPEG、GIF、BMP、WebP、TIFF、またはAVIF）。",
   },
   imageFetchFailed: {
     [Locale.EnglishUS]: "Failed to fetch the attached image. Please try again.",
