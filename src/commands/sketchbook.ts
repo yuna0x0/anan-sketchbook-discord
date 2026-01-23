@@ -18,6 +18,9 @@ import {
   ExpressionOption,
   ExpressionOptionValue,
   getRandomEmotion,
+  FONTS,
+  FontId,
+  SKETCHBOOK_DEFAULT_FONT,
 } from "../config.js";
 import { generateSketchbookImage } from "../utils/sketchbookGenerator.js";
 import { isImageSupported } from "../utils/imageUtils.js";
@@ -30,11 +33,19 @@ import {
   ALIGN_CHOICE_LOCALIZATIONS,
   VALIGN_CHOICE_LOCALIZATIONS,
   WRAP_CHOICE_LOCALIZATIONS,
+  FONT_NAME_LOCALIZATIONS,
   getResponseMessage,
   getSketchbookMessage,
   getSketchbookAttachmentDescription,
 } from "../locales.js";
 import { Locale } from "discord.js";
+
+// Build font choices with localizations
+const fontChoices = Object.entries(FONTS).map(([id, info]) => ({
+  name: FONT_NAME_LOCALIZATIONS[id]?.[Locale.EnglishUS] ?? info.name,
+  name_localizations: FONT_NAME_LOCALIZATIONS[id],
+  value: id,
+}));
 
 // Build the slash command with all options
 export const data = new SlashCommandBuilder()
@@ -265,6 +276,14 @@ export const data = new SlashCommandBuilder()
           value: "knuth_plass",
         },
       ),
+  )
+  .addStringOption((option) =>
+    option
+      .setName("font")
+      .setDescription(OPTION_DESCRIPTION_LOCALIZATIONS.font[Locale.EnglishUS]!)
+      .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.font)
+      .setRequired(false)
+      .addChoices(...fontChoices),
   );
 
 /**
@@ -305,6 +324,8 @@ export async function execute(
     const useOverlay = interaction.options.getBoolean("overlay") ?? true;
     const wrapAlgorithm = (interaction.options.getString("wrap") ??
       "greedy") as WrapAlgorithm;
+    const fontId = (interaction.options.getString("font") ??
+      SKETCHBOOK_DEFAULT_FONT) as FontId;
 
     // Validate that at least text or image is provided
     if (!text && !imageAttachment) {
@@ -353,6 +374,7 @@ export async function execute(
       valign,
       useOverlay,
       wrapAlgorithm,
+      fontId,
     });
 
     // Create attachment from buffer

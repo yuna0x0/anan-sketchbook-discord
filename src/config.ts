@@ -91,8 +91,72 @@ export function getRandomEmotion(): EmotionTypeValue {
   return emotions[randomIndex];
 }
 
+// =============================================================================
+// Font System
+// =============================================================================
+
+// Available fonts for sketchbook and dialogue systems
+export const FONTS = {
+  miSans: {
+    name: "MiSans Bold",
+    file: "MiSans-Bold.ttf",
+  },
+  notoSansTCBlack: {
+    name: "Noto Sans TC Black",
+    file: "NotoSansTC-Black.otf",
+  },
+  notoSansKRBlack: {
+    name: "Noto Sans KR Black",
+    file: "NotoSansKR-Black.otf",
+  },
+  notoSansThaiBlack: {
+    name: "Noto Sans Thai Black",
+    file: "NotoSansThai-Black.otf",
+  },
+  tsukuMinPr6N: {
+    name: "TsukuMin Pr6N",
+    file: "TsukushiMincho.otf",
+  },
+  notoSerifTCSemiBold: {
+    name: "Noto Serif TC SemiBold",
+    file: "NotoSerifTC-SemiBold.otf",
+  },
+  notoSerifKRSemiBold: {
+    name: "Noto Serif KR SemiBold",
+    file: "NotoSerifKR-SemiBold.otf",
+  },
+  notoSerifThaiSemiBold: {
+    name: "Noto Serif Thai SemiBold",
+    file: "NotoSerifThai-SemiBold.otf",
+  },
+} as const;
+
+export type FontId = keyof typeof FONTS;
+
+// Get the full path to a font file in the shared fonts directory
+export function getFontPath(fontId: FontId): string {
+  const font = FONTS[fontId];
+  return join(ASSETS_DIR, "fonts", font.file);
+}
+
+// =============================================================================
+// Sketchbook Font Configuration
+// =============================================================================
+
+// Default font for sketchbook text
+export const SKETCHBOOK_DEFAULT_FONT: FontId = "miSans";
+
+// Fallback fonts for sketchbook (used for characters not supported by the primary font)
+export const SKETCHBOOK_FALLBACK_FONTS: FontId[] = [
+  "miSans",
+  "notoSansTCBlack",
+  "notoSansKRBlack",
+  "notoSansThaiBlack",
+];
+
 // Sketchbook text area configuration
 // These coordinates define the drawable area on the sketchbook image
+
 export const SKETCHBOOK_CONFIG = {
   // Top-left corner of the text/image area (x, y)
   textBoxTopLeft: { x: 119, y: 450 } as const,
@@ -108,8 +172,6 @@ export const SKETCHBOOK_CONFIG = {
   bracketTextColor: { r: 128, g: 0, b: 128 } as const,
   // Overlay image file name
   overlayImage: "base_overlay.png",
-  // Font file name
-  fontFile: "font.ttf",
   // Padding for image paste
   imagePadding: 12,
 } as const;
@@ -124,9 +186,14 @@ export function getEmotionImagePath(emotion: EmotionTypeValue): string {
   return getSketchbookAssetPath(EMOTION_IMAGE_MAP[emotion]);
 }
 
-// Legacy alias for backwards compatibility
-export function getAssetPath(filename: string): string {
-  return getSketchbookAssetPath(filename);
+// Get the full path to the sketchbook default font
+export function getSketchbookFontPath(): string {
+  return getFontPath(SKETCHBOOK_DEFAULT_FONT);
+}
+
+// Get all fallback font paths for sketchbook
+export function getSketchbookFallbackFontPaths(): string[] {
+  return SKETCHBOOK_FALLBACK_FONTS.map((fontId) => getFontPath(fontId));
 }
 
 // =============================================================================
@@ -160,7 +227,6 @@ export type LocalizedNameConfig = Partial<
 export interface CharacterInfo {
   id: string;
   expressions: string[];
-  font: string;
   themeColor: RGBColor;
   nameConfig: LocalizedNameConfig;
 }
@@ -208,7 +274,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "ema_expression_7",
       "ema_expression_8",
     ],
-    font: "stzhongs",
     themeColor: { r: 253, g: 145, b: 175 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -301,7 +366,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "hiro_expression_5",
       "hiro_expression_6",
     ],
-    font: "stzhongs",
     themeColor: { r: 239, g: 79, b: 84 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -395,7 +459,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "sherry_expression_6",
       "sherry_expression_7",
     ],
-    font: "stzhongs",
     themeColor: { r: 137, g: 177, b: 251 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -469,7 +532,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "hanna_expression_4",
       "hanna_expression_5",
     ],
-    font: "stzhongs",
     themeColor: { r: 169, g: 199, b: 30 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -565,7 +627,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "anan_expression_8",
       "anan_expression_9",
     ],
-    font: "stzhongs",
     themeColor: { r: 159, g: 145, b: 251 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -670,7 +731,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "yuki_expression_17",
       "yuki_expression_18",
     ],
-    font: "stzhongs",
     themeColor: { r: 195, g: 209, b: 231 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -745,7 +805,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "meruru_expression_5",
       "meruru_expression_6",
     ],
-    font: "stzhongs",
     themeColor: { r: 227, g: 185, b: 175 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -838,7 +897,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "noa_expression_5",
       "noa_expression_6",
     ],
-    font: "stzhongs",
     themeColor: { r: 104, g: 223, b: 231 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -932,7 +990,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "reia_expression_6",
       "reia_expression_7",
     ],
-    font: "stzhongs",
     themeColor: { r: 253, g: 177, b: 88 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -1023,7 +1080,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "miria_expression_3",
       "miria_expression_4",
     ],
-    font: "stzhongs",
     themeColor: { r: 235, g: 207, b: 139 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -1115,7 +1171,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "nanoka_expression_4",
       "nanoka_expression_5",
     ],
-    font: "stzhongs",
     themeColor: { r: 131, g: 143, b: 147 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -1207,7 +1262,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "margo_expression_4",
       "margo_expression_5",
     ],
-    font: "stzhongs",
     themeColor: { r: 185, g: 124, b: 235 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -1300,7 +1354,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "alisa_expression_5",
       "alisa_expression_6",
     ],
-    font: "stzhongs",
     themeColor: { r: 235, g: 75, b: 60 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -1392,7 +1445,6 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       "coco_expression_4",
       "coco_expression_5",
     ],
-    font: "stzhongs",
     themeColor: { r: 251, g: 114, b: 78 },
     nameConfig: {
       [Locale.ChineseCN]: [
@@ -1490,26 +1542,32 @@ export function getCharacterIds(): CharacterId[] {
   return Object.keys(CHARACTERS) as CharacterId[];
 }
 
-// Available fonts for dialogue
-export const DIALOGUE_FONTS = {
-  stzhongs: {
-    id: "stzhongs",
-    name: "STZhongsong",
-    file: "stzhongs.ttf",
-  },
-  msyh: {
-    id: "msyh",
-    name: "Microsoft YaHei",
-    file: "msyh.ttf",
-  },
-  simsun: {
-    id: "simsun",
-    name: "SimSun",
-    file: "simsun.ttf",
-  },
-} as const;
+// =============================================================================
+// Dialogue Font Configuration
+// =============================================================================
 
-export type DialogueFontId = keyof typeof DIALOGUE_FONTS;
+// Default font for dialogue text
+export const DIALOGUE_TEXT_DEFAULT_FONT: FontId = "tsukuMinPr6N";
+
+// Fallback fonts for dialogue text
+export const DIALOGUE_TEXT_FALLBACK_FONTS: FontId[] = [
+  "tsukuMinPr6N",
+  "notoSerifTCSemiBold",
+  "notoSerifKRSemiBold",
+  "notoSerifThaiSemiBold",
+];
+
+// Character name font mapping by Discord locale
+export const CHARACTER_NAME_LOCALE_FONTS: Partial<Record<Locale, FontId>> = {
+  [Locale.Japanese]: "tsukuMinPr6N",
+  [Locale.ChineseCN]: "notoSerifTCSemiBold",
+  [Locale.ChineseTW]: "notoSerifTCSemiBold",
+};
+
+// Get character name font for a specific locale
+export function getCharacterNameFontForLocale(locale: Locale): FontId {
+  return CHARACTER_NAME_LOCALE_FONTS[locale] ?? "tsukuMinPr6N";
+}
 
 // Background stretch modes
 export const STRETCH_MODES = {
@@ -1614,7 +1672,7 @@ export const DIALOGUE_CONFIG = {
 
 // Get the full path to a dialogue asset file
 export function getDialogueAssetPath(
-  type: "characters" | "backgrounds" | "fonts" | "ui",
+  type: "characters" | "backgrounds" | "ui",
   ...parts: string[]
 ): string {
   return join(ASSETS_DIR, "dialogue", type, ...parts);
@@ -1641,10 +1699,9 @@ export function getBackgroundImagePath(backgroundId: string): string {
   return getDialogueAssetPath("backgrounds", filename);
 }
 
-// Get font path
-export function getDialogueFontPath(fontId: DialogueFontId): string {
-  const font = DIALOGUE_FONTS[fontId];
-  return getDialogueAssetPath("fonts", font.file);
+// Get dialogue font path (uses the unified font system)
+export function getDialogueFontPath(fontId: FontId): string {
+  return getFontPath(fontId);
 }
 
 // Get UI overlay path

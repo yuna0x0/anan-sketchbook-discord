@@ -62,6 +62,7 @@ pnpm start
 | `valign` | No | Vertical alignment |
 | `overlay` | No | Apply overlay effect (default: true) |
 | `wrap` | No | Text wrapping: Greedy or Knuth-Plass |
+| `font` | No | Font selection |
 | `dm` | No | Send to DMs |
 
 *At least one of `text` or `image` is required.

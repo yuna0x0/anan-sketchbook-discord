@@ -17,16 +17,17 @@ import {
 import {
   CHARACTERS,
   CharacterId,
-  DialogueFontId,
+  FontId,
+  FONTS,
   StretchMode,
   NameConfigLocale,
-  DIALOGUE_FONTS,
   STRETCH_MODES,
   BACKGROUNDS,
   getBackgroundIds,
   getExpressionNumber,
   ExpressionOption,
   FALLBACK_NAME_LOCALE,
+  DIALOGUE_TEXT_DEFAULT_FONT,
 } from "../config.js";
 import { generateDialogueImage } from "../utils/dialogueGenerator.js";
 import { isImageSupported } from "../utils/imageUtils.js";
@@ -76,8 +77,8 @@ const characterChoices = Object.entries(CHARACTERS).map(([id]) => ({
 }));
 
 // Build font choices with localizations (use EnglishUS as default name)
-const fontChoices = Object.entries(DIALOGUE_FONTS).map(([id, info]) => ({
-  name: FONT_NAME_LOCALIZATIONS[id][Locale.EnglishUS] ?? info.name,
+const fontChoices = Object.entries(FONTS).map(([id, info]) => ({
+  name: FONT_NAME_LOCALIZATIONS[id]?.[Locale.EnglishUS] ?? info.name,
   name_localizations: FONT_NAME_LOCALIZATIONS[id],
   value: id,
 }));
@@ -347,7 +348,7 @@ export async function execute(
     const stretchMode = (interaction.options.getString("stretch") ??
       "zoom_x") as StretchMode;
     const fontId = (interaction.options.getString("font") ??
-      "stzhongs") as DialogueFontId;
+      DIALOGUE_TEXT_DEFAULT_FONT) as FontId;
     const fontSize = interaction.options.getInteger("font_size") ?? 72;
     const highlightBrackets =
       interaction.options.getBoolean("highlight") ?? true;

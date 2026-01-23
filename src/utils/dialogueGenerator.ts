@@ -13,9 +13,11 @@ import {
 import { existsSync } from "fs";
 import {
   DIALOGUE_CONFIG,
-  DIALOGUE_FONTS,
+  FONTS,
+  FontId,
+  DIALOGUE_TEXT_DEFAULT_FONT,
+  DIALOGUE_TEXT_FALLBACK_FONTS,
   CharacterId,
-  DialogueFontId,
   StretchMode,
   NameConfigLocale,
   getCharacterImagePath,
@@ -24,6 +26,7 @@ import {
   getDialogueOverlayPath,
   getCharacter,
   getNameConfig,
+  getCharacterNameFontForLocale,
   FALLBACK_NAME_LOCALE,
 } from "../config.js";
 import {
@@ -42,9 +45,31 @@ import { RGBColor } from "../config.js";
 const registeredFonts = new Set<string>();
 
 /**
- * Ensure a dialogue font is registered
+ * Get font family string with fallback for dialogue text
  */
-function ensureDialogueFontRegistered(fontId: DialogueFontId): void {
+function getTextFontFamilyWithFallback(fontId: FontId): string {
+  const families = [fontId];
+
+  for (const fallbackId of DIALOGUE_TEXT_FALLBACK_FONTS) {
+    if (fallbackId !== fontId && !families.includes(fallbackId)) {
+      families.push(fallbackId);
+    }
+  }
+
+  return families.join(", ");
+}
+
+/**
+ * Get font family string for character name
+ */
+function getNameFontFamily(fontId: FontId): string {
+  return fontId;
+}
+
+/**
+ * Ensure a font is registered
+ */
+function ensureFontRegistered(fontId: FontId): void {
   if (registeredFonts.has(fontId)) {
     return;
   }
@@ -59,11 +84,11 @@ function ensureDialogueFontRegistered(fontId: DialogueFontId): void {
 }
 
 /**
- * Ensure all dialogue fonts are registered
+ * Ensure all fonts are registered
  */
 function ensureAllFontsRegistered(): void {
-  for (const fontId of Object.keys(DIALOGUE_FONTS) as DialogueFontId[]) {
-    ensureDialogueFontRegistered(fontId);
+  for (const fontId of Object.keys(FONTS) as FontId[]) {
+    ensureFontRegistered(fontId);
   }
 }
 
@@ -77,7 +102,7 @@ export interface DialogueImageOptions {
   backgroundId?: string;
   customBackground?: Buffer;
   stretchMode?: StretchMode;
-  fontId?: DialogueFontId;
+  fontId?: FontId;
   fontSize?: number;
   highlightBrackets?: boolean;
   nameLocale?: NameConfigLocale;
@@ -164,7 +189,9 @@ function drawCharacterName(
   const nameConfig = getNameConfig(character, locale);
 
   for (const config of nameConfig) {
-    ctx.font = `${config.fontSize}px ${character.font}`;
+    const nameFontId = getCharacterNameFontForLocale(locale);
+    const nameFontFamily = getNameFontFamily(nameFontId);
+    ctx.font = `${config.fontSize}px ${nameFontFamily}`;
 
     // Draw shadow
     ctx.fillStyle = rgbToCss(shadowColor);
@@ -423,7 +450,7 @@ export async function generateDialogueImage(
     backgroundId = "bg_001_001",
     customBackground,
     stretchMode = "zoom_x",
-    fontId = "stzhongs",
+    fontId = DIALOGUE_TEXT_DEFAULT_FONT,
     fontSize = DIALOGUE_CONFIG.defaultFontSize,
     highlightBrackets = true,
     nameLocale = FALLBACK_NAME_LOCALE,
@@ -493,8 +520,9 @@ export async function generateDialogueImage(
   const lineHeight = Math.floor(fontSize * lineHeightMultiplier);
   const maxLines = Math.floor(maxHeight / lineHeight) || 1;
 
-  // Set up font for text
-  ctx.font = `${fontSize}px ${fontId}`;
+  // Set up font for text with fallback support
+  const fontFamily = getTextFontFamilyWithFallback(fontId);
+  ctx.font = `${fontSize}px ${fontFamily}`;
   ctx.textBaseline = "alphabetic";
 
   // Wrap text

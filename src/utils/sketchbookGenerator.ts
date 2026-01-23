@@ -8,7 +8,12 @@ import { createCanvas, registerFont, CanvasRenderingContext2D } from "canvas";
 import { existsSync } from "fs";
 import {
   SKETCHBOOK_CONFIG,
-  getAssetPath,
+  SKETCHBOOK_FALLBACK_FONTS,
+  SKETCHBOOK_DEFAULT_FONT,
+  FONTS,
+  FontId,
+  getFontPath,
+  getSketchbookAssetPath,
   getEmotionImagePath,
   EmotionTypeValue,
   EmotionType,
@@ -44,8 +49,21 @@ export type HAlign = "left" | "center" | "right";
  */
 export type VAlign = "top" | "middle" | "bottom";
 
-// Flag to track if font has been registered
-let fontRegistered = false;
+// Track registered fonts
+const registeredFonts = new Set<string>();
+
+// Build font family string with fallback for a given font ID
+function getFontFamilyWithFallback(fontId: FontId): string {
+  const families = [fontId];
+
+  for (const fallbackId of SKETCHBOOK_FALLBACK_FONTS) {
+    if (fallbackId !== fontId && !families.includes(fallbackId)) {
+      families.push(fallbackId);
+    }
+  }
+
+  return families.join(", ");
+}
 
 /**
  * Options for generating sketchbook image with text
@@ -61,6 +79,7 @@ export interface TextImageOptions {
   lineSpacing?: number;
   wrapAlgorithm?: WrapAlgorithm;
   useOverlay?: boolean;
+  fontId?: FontId;
 }
 
 /**
@@ -74,6 +93,7 @@ export interface PasteImageOptions {
   padding?: number;
   allowUpscale?: boolean;
   useOverlay?: boolean;
+  fontId?: FontId;
 }
 
 /**
@@ -93,20 +113,32 @@ export interface CombinedImageOptions {
   padding?: number;
   allowUpscale?: boolean;
   useOverlay?: boolean;
+  fontId?: FontId;
 }
 
 /**
- * Register the custom font for text rendering
+ * Ensure a font is registered
  */
-function ensureFontRegistered(): void {
-  if (fontRegistered) {
+function ensureFontRegistered(fontId: FontId): void {
+  if (registeredFonts.has(fontId)) {
     return;
   }
 
-  const fontPath = getAssetPath(SKETCHBOOK_CONFIG.fontFile);
+  const fontPath = getFontPath(fontId);
   if (existsSync(fontPath)) {
-    registerFont(fontPath, { family: "SketchbookFont" });
-    fontRegistered = true;
+    registerFont(fontPath, { family: fontId });
+    registeredFonts.add(fontId);
+  } else {
+    console.warn(`Font file not found: ${fontPath}`);
+  }
+}
+
+/**
+ * Ensure all fonts are registered
+ */
+function ensureAllFontsRegistered(): void {
+  for (const fontId of Object.keys(FONTS) as FontId[]) {
+    ensureFontRegistered(fontId);
   }
 }
 
@@ -162,6 +194,7 @@ function findOptimalFontSize(
   maxFontSize: number,
   lineSpacing: number,
   wrapAlgorithm: WrapAlgorithm,
+  fontId: FontId,
 ): {
   fontSize: number;
   lines: string[];
@@ -181,7 +214,8 @@ function findOptimalFontSize(
 
   while (lo <= hi) {
     const mid = Math.floor((lo + hi) / 2);
-    ctx.font = `${mid}px SketchbookFont`;
+    const fontFamily = getFontFamilyWithFallback(fontId);
+    ctx.font = `${mid}px ${fontFamily}`;
 
     const lines = wrapText(ctx, text, maxWidth, wrapAlgorithm, mid);
     const { width, height, lineHeight } = measureTextBlock(
@@ -205,7 +239,8 @@ function findOptimalFontSize(
 
   // Fallback to minimum size if nothing fits
   if (bestSize === 0) {
-    ctx.font = `1px SketchbookFont`;
+    const fontFamily = getFontFamilyWithFallback(fontId);
+    ctx.font = `1px ${fontFamily}`;
     bestLines = wrapText(ctx, text, maxWidth, wrapAlgorithm, 1);
     bestSize = 1;
     bestLineHeight = 1;
@@ -443,7 +478,7 @@ function isVerticalImage(
 export async function generateTextImage(
   options: TextImageOptions,
 ): Promise<Buffer> {
-  ensureFontRegistered();
+  ensureAllFontsRegistered();
 
   const {
     emotion = EmotionType.NORMAL,
@@ -456,6 +491,7 @@ export async function generateTextImage(
     lineSpacing = SKETCHBOOK_CONFIG.lineSpacing,
     wrapAlgorithm = "greedy",
     useOverlay = true,
+    fontId = SKETCHBOOK_DEFAULT_FONT,
   } = options;
 
   // Load base image
@@ -485,10 +521,12 @@ export async function generateTextImage(
     maxFontHeight,
     lineSpacing,
     wrapAlgorithm,
+    fontId,
   );
 
   // Set final font
-  ctx.font = `${fontSize}px SketchbookFont`;
+  const fontFamily = getFontFamilyWithFallback(fontId);
+  ctx.font = `${fontSize}px ${fontFamily}`;
   ctx.textBaseline = "top";
 
   // Calculate vertical starting position
@@ -517,7 +555,7 @@ export async function generateTextImage(
 
   // Apply overlay if enabled
   if (useOverlay) {
-    const overlayPath = getAssetPath(SKETCHBOOK_CONFIG.overlayImage);
+    const overlayPath = getSketchbookAssetPath(SKETCHBOOK_CONFIG.overlayImage);
     if (existsSync(overlayPath)) {
       const overlayImage = await loadImageFromPath(overlayPath);
       ctx.drawImage(overlayImage, 0, 0);
@@ -604,7 +642,7 @@ export async function generatePastedImage(
 
   // Apply overlay if enabled
   if (useOverlay) {
-    const overlayPath = getAssetPath(SKETCHBOOK_CONFIG.overlayImage);
+    const overlayPath = getSketchbookAssetPath(SKETCHBOOK_CONFIG.overlayImage);
     if (existsSync(overlayPath)) {
       const overlayImage = await loadImageFromPath(overlayPath);
       ctx.drawImage(overlayImage, 0, 0);
@@ -622,7 +660,7 @@ export async function generatePastedImage(
 export async function generateCombinedImage(
   options: CombinedImageOptions,
 ): Promise<Buffer> {
-  ensureFontRegistered();
+  ensureAllFontsRegistered();
 
   const {
     emotion = EmotionType.NORMAL,
@@ -638,6 +676,7 @@ export async function generateCombinedImage(
     padding = SKETCHBOOK_CONFIG.imagePadding,
     allowUpscale = true,
     useOverlay = true,
+    fontId = SKETCHBOOK_DEFAULT_FONT,
   } = options;
 
   // Load base image
@@ -703,9 +742,11 @@ export async function generateCombinedImage(
       maxFontHeight,
       lineSpacing,
       wrapAlgorithm,
+      fontId,
     );
 
-    ctx.font = `${fontSize}px SketchbookFont`;
+    const fontFamily = getFontFamilyWithFallback(fontId);
+    ctx.font = `${fontSize}px ${fontFamily}`;
     ctx.textBaseline = "top";
 
     let yStart: number;
@@ -763,9 +804,11 @@ export async function generateCombinedImage(
       maxFontHeight,
       lineSpacing,
       wrapAlgorithm,
+      fontId,
     );
 
-    ctx.font = `${fontSize}px SketchbookFont`;
+    const fontFamily = getFontFamilyWithFallback(fontId);
+    ctx.font = `${fontSize}px ${fontFamily}`;
     ctx.textBaseline = "top";
 
     let yStart: number;
@@ -793,7 +836,7 @@ export async function generateCombinedImage(
 
   // Apply overlay if enabled
   if (useOverlay) {
-    const overlayPath = getAssetPath(SKETCHBOOK_CONFIG.overlayImage);
+    const overlayPath = getSketchbookAssetPath(SKETCHBOOK_CONFIG.overlayImage);
     if (existsSync(overlayPath)) {
       const overlayImage = await loadImageFromPath(overlayPath);
       ctx.drawImage(overlayImage, 0, 0);
@@ -822,6 +865,7 @@ export async function generateSketchbookImage(options: {
   padding?: number;
   allowUpscale?: boolean;
   useOverlay?: boolean;
+  fontId?: FontId;
 }): Promise<Buffer> {
   const { text, contentImage, ...restOptions } = options;
 
