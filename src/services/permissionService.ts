@@ -4,6 +4,7 @@
  * Combines guild settings, channel permissions, command permissions, and rate limits.
  */
 
+import { APIInteractionGuildMember } from "discord-api-types/v10";
 import { GuildMember, Locale } from "discord.js";
 import {
   isGuildEnabled,
@@ -79,6 +80,43 @@ function getParentChannelId(
 }
 
 /**
+ * Extracts role IDs from a member object.
+ * Handles both GuildMember (with roles.cache Collection) and APIInteractionGuildMember (with roles array).
+ */
+function getMemberRoleIds(
+  member: GuildMember | APIInteractionGuildMember,
+): string[] {
+  // Check if it's a GuildMember with roles.cache (Collection)
+  if (
+    "cache" in member.roles &&
+    typeof member.roles.cache?.map === "function"
+  ) {
+    return member.roles.cache.map((role) => role.id);
+  }
+  // Otherwise it's an APIInteractionGuildMember with roles as string[]
+  if (Array.isArray(member.roles)) {
+    return member.roles;
+  }
+  // Fallback to empty array if neither
+  return [];
+}
+
+/**
+ * Gets the member ID from either GuildMember or APIInteractionGuildMember.
+ */
+function getMemberId(member: GuildMember | APIInteractionGuildMember): string {
+  // GuildMember has .id directly
+  if ("id" in member && typeof member.id === "string") {
+    return member.id;
+  }
+  // APIInteractionGuildMember has .user.id
+  if ("user" in member && member.user && typeof member.user.id === "string") {
+    return member.user.id;
+  }
+  return "";
+}
+
+/**
  * Performs a complete permission check for a command execution.
  * This is the main function to use before executing any command.
  *
@@ -91,7 +129,7 @@ function getParentChannelId(
 export function checkPermissions(
   guildId: string | null,
   channel: PermissionCheckChannel | null,
-  member: GuildMember | null,
+  member: GuildMember | APIInteractionGuildMember | null,
   commandName: string,
   consumeRate: boolean = true,
 ): PermissionCheckResult {
@@ -152,7 +190,7 @@ export function checkPermissions(
 
   // Check role permissions if we have member info
   if (member) {
-    const userRoleIds = member.roles.cache.map((role) => role.id);
+    const userRoleIds = getMemberRoleIds(member);
 
     // First check default role permissions
     if (!canUserUseBot(guildId, userRoleIds)) {
@@ -173,8 +211,9 @@ export function checkPermissions(
 
   // Check rate limits
   if (member) {
+    const memberId = getMemberId(member);
     if (consumeRate) {
-      const rateLimitResult = consumeRateLimit(guildId, member.id, commandName);
+      const rateLimitResult = consumeRateLimit(guildId, memberId, commandName);
 
       if (!rateLimitResult.allowed) {
         return {
@@ -185,7 +224,7 @@ export function checkPermissions(
       }
     } else {
       // Dry-run check without consuming
-      const rateLimitCheck = checkRateLimit(guildId, member.id, commandName);
+      const rateLimitCheck = checkRateLimit(guildId, memberId, commandName);
 
       if (rateLimitCheck.limited) {
         return {
@@ -302,7 +341,7 @@ export function getPermissionDeniedMessageForResult(
 export function quickPermissionCheck(
   guildId: string | null,
   channel: PermissionCheckChannel | null,
-  member: GuildMember | null,
+  member: GuildMember | APIInteractionGuildMember | null,
   commandName: string,
 ): boolean {
   const result = checkPermissions(guildId, channel, member, commandName, false);

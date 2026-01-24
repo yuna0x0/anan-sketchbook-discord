@@ -17,6 +17,7 @@ import {
   randomChannelId,
   randomRoleId,
   createMockMember,
+  createMockAPIMember,
   createMockChannel,
 } from "../setup.js";
 
@@ -31,18 +32,13 @@ describe("permissionService", () => {
   before(async () => {
     setupTestEnvironment();
     await createTestDatabase();
-    permissionService = await import(
-      "../../src/services/permissionService.js"
-    );
-    guildSettings = await import(
-      "../../src/database/repositories/guildSettings.js"
-    );
-    channelPermissions = await import(
-      "../../src/database/repositories/channelPermissions.js"
-    );
-    commandPermissions = await import(
-      "../../src/database/repositories/commandPermissions.js"
-    );
+    permissionService = await import("../../src/services/permissionService.js");
+    guildSettings =
+      await import("../../src/database/repositories/guildSettings.js");
+    channelPermissions =
+      await import("../../src/database/repositories/channelPermissions.js");
+    commandPermissions =
+      await import("../../src/database/repositories/commandPermissions.js");
     rateLimits = await import("../../src/database/repositories/rateLimits.js");
   });
 
@@ -58,7 +54,7 @@ describe("permissionService", () => {
           null, // guildId
           null, // channel
           null, // member
-          "sketchbook"
+          "sketchbook",
         );
 
         assert.equal(result.allowed, true);
@@ -81,7 +77,7 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          false // don't consume rate limit
+          false, // don't consume rate limit
         );
 
         assert.equal(result.allowed, true);
@@ -101,13 +97,13 @@ describe("permissionService", () => {
           guildId,
           channel,
           member as any,
-          "sketchbook"
+          "sketchbook",
         );
 
         assert.equal(result.allowed, false);
         assert.equal(
           result.reason,
-          permissionService.PermissionDeniedReason.BOT_DISABLED
+          permissionService.PermissionDeniedReason.BOT_DISABLED,
         );
       });
     });
@@ -128,7 +124,7 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          false
+          false,
         );
 
         assert.equal(result.allowed, true);
@@ -151,13 +147,13 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          false
+          false,
         );
 
         assert.equal(result.allowed, false);
         assert.equal(
           result.reason,
-          permissionService.PermissionDeniedReason.CHANNEL_NOT_ALLOWED
+          permissionService.PermissionDeniedReason.CHANNEL_NOT_ALLOWED,
         );
       });
 
@@ -177,7 +173,7 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          false
+          false,
         );
 
         assert.equal(result.allowed, true);
@@ -199,13 +195,13 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          false
+          false,
         );
 
         assert.equal(result.allowed, false);
         assert.equal(
           result.reason,
-          permissionService.PermissionDeniedReason.CHANNEL_NOT_ALLOWED
+          permissionService.PermissionDeniedReason.CHANNEL_NOT_ALLOWED,
         );
       });
     });
@@ -227,13 +223,13 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          false
+          false,
         );
 
         assert.equal(result.allowed, false);
         assert.equal(
           result.reason,
-          permissionService.PermissionDeniedReason.COMMAND_DISABLED
+          permissionService.PermissionDeniedReason.COMMAND_DISABLED,
         );
       });
     });
@@ -255,13 +251,13 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          false
+          false,
         );
 
         assert.equal(result.allowed, false);
         assert.equal(
           result.reason,
-          permissionService.PermissionDeniedReason.GLOBAL_USER_DENIED
+          permissionService.PermissionDeniedReason.GLOBAL_USER_DENIED,
         );
       });
 
@@ -282,13 +278,13 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          false
+          false,
         );
 
         assert.equal(result.allowed, false);
         assert.equal(
           result.reason,
-          permissionService.PermissionDeniedReason.USER_DENIED
+          permissionService.PermissionDeniedReason.USER_DENIED,
         );
       });
 
@@ -309,10 +305,183 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          false
+          false,
         );
 
         assert.equal(result.allowed, true);
+      });
+    });
+
+    describe("APIInteractionGuildMember handling", () => {
+      it("should handle API member with roles as string array", () => {
+        const guildId = randomGuildId();
+        const userId = randomUserId();
+        const channelId = randomChannelId();
+
+        guildSettings.getOrCreateGuildSettings(guildId);
+
+        const channel = createMockChannel(channelId);
+        // Use API member format where roles is string[] instead of Collection
+        const member = createMockAPIMember(userId, []);
+
+        const result = permissionService.checkPermissions(
+          guildId,
+          channel,
+          member as any,
+          "sketchbook",
+          false,
+        );
+
+        assert.equal(result.allowed, true);
+      });
+
+      it("should correctly check allowed roles for API member", () => {
+        const guildId = randomGuildId();
+        const userId = randomUserId();
+        const channelId = randomChannelId();
+        const allowedRole = randomRoleId();
+
+        guildSettings.getOrCreateGuildSettings(guildId);
+        commandPermissions.addAllowedRole(guildId, "sketchbook", allowedRole);
+
+        const channel = createMockChannel(channelId);
+        // API member with the allowed role
+        const member = createMockAPIMember(userId, [allowedRole]);
+
+        const result = permissionService.checkPermissions(
+          guildId,
+          channel,
+          member as any,
+          "sketchbook",
+          false,
+        );
+
+        assert.equal(result.allowed, true);
+      });
+
+      it("should deny API member without allowed role", () => {
+        const guildId = randomGuildId();
+        const userId = randomUserId();
+        const channelId = randomChannelId();
+        const allowedRole = randomRoleId();
+
+        guildSettings.getOrCreateGuildSettings(guildId);
+        commandPermissions.addAllowedRole(guildId, "sketchbook", allowedRole);
+
+        const channel = createMockChannel(channelId);
+        // API member without the required role
+        const member = createMockAPIMember(userId, ["other_role"]);
+
+        const result = permissionService.checkPermissions(
+          guildId,
+          channel,
+          member as any,
+          "sketchbook",
+          false,
+        );
+
+        assert.equal(result.allowed, false);
+        assert.equal(
+          result.reason,
+          permissionService.PermissionDeniedReason.USER_DENIED,
+        );
+      });
+
+      it("should deny API member with denied role (global)", () => {
+        const guildId = randomGuildId();
+        const userId = randomUserId();
+        const channelId = randomChannelId();
+        const deniedRole = randomRoleId();
+
+        guildSettings.addDefaultDeniedRole(guildId, deniedRole);
+
+        const channel = createMockChannel(channelId);
+        // API member with a denied role
+        const member = createMockAPIMember(userId, [deniedRole]);
+
+        const result = permissionService.checkPermissions(
+          guildId,
+          channel,
+          member as any,
+          "sketchbook",
+          false,
+        );
+
+        assert.equal(result.allowed, false);
+        assert.equal(
+          result.reason,
+          permissionService.PermissionDeniedReason.GLOBAL_USER_DENIED,
+        );
+      });
+
+      it("should correctly get member ID from API member for rate limiting", () => {
+        const guildId = randomGuildId();
+        const userId = randomUserId();
+        const channelId = randomChannelId();
+
+        guildSettings.getOrCreateGuildSettings(guildId);
+        // Set a very restrictive rate limit
+        rateLimits.setRateLimit(guildId, "sketchbook", 1, 60000);
+
+        const channel = createMockChannel(channelId);
+        const member = createMockAPIMember(userId, []);
+
+        // First call should succeed and consume rate limit
+        const result1 = permissionService.checkPermissions(
+          guildId,
+          channel,
+          member as any,
+          "sketchbook",
+          true, // consume rate limit
+        );
+        assert.equal(result1.allowed, true);
+
+        // Second call should be rate limited
+        const result2 = permissionService.checkPermissions(
+          guildId,
+          channel,
+          member as any,
+          "sketchbook",
+          true,
+        );
+        assert.equal(result2.allowed, false);
+        assert.equal(
+          result2.reason,
+          permissionService.PermissionDeniedReason.RATE_LIMITED,
+        );
+      });
+
+      it("should handle both GuildMember and API member in same test", () => {
+        const guildId = randomGuildId();
+        const channelId = randomChannelId();
+        const allowedRole = randomRoleId();
+
+        guildSettings.getOrCreateGuildSettings(guildId);
+        commandPermissions.addAllowedRole(guildId, "dialogue", allowedRole);
+
+        const channel = createMockChannel(channelId);
+
+        // Test with GuildMember (roles.cache.map style)
+        const guildMember = createMockMember("user1", [allowedRole]);
+        const result1 = permissionService.checkPermissions(
+          guildId,
+          channel,
+          guildMember as any,
+          "dialogue",
+          false,
+        );
+        assert.equal(result1.allowed, true);
+
+        // Test with APIInteractionGuildMember (roles as string[] style)
+        const apiMember = createMockAPIMember("user2", [allowedRole]);
+        const result2 = permissionService.checkPermissions(
+          guildId,
+          channel,
+          apiMember as any,
+          "dialogue",
+          false,
+        );
+        assert.equal(result2.allowed, true);
       });
     });
 
@@ -334,13 +503,13 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          true // consume rate limit
+          true, // consume rate limit
         );
 
         assert.equal(result.allowed, false);
         assert.equal(
           result.reason,
-          permissionService.PermissionDeniedReason.RATE_LIMITED
+          permissionService.PermissionDeniedReason.RATE_LIMITED,
         );
         assert.ok(result.retryAfter !== undefined);
       });
@@ -361,7 +530,7 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          true // consume rate limit
+          true, // consume rate limit
         );
 
         assert.equal(result.allowed, true);
@@ -371,7 +540,7 @@ describe("permissionService", () => {
           guildId,
           userId,
           "sketchbook",
-          60
+          60,
         );
         assert.equal(count, 1);
       });
@@ -392,7 +561,7 @@ describe("permissionService", () => {
           channel,
           member as any,
           "sketchbook",
-          false // don't consume
+          false, // don't consume
         );
 
         assert.equal(result.allowed, true);
@@ -402,7 +571,7 @@ describe("permissionService", () => {
           guildId,
           userId,
           "sketchbook",
-          60
+          60,
         );
         assert.equal(count, 0);
       });
@@ -429,7 +598,7 @@ describe("permissionService", () => {
           thread,
           member as any,
           "sketchbook",
-          false
+          false,
         );
 
         assert.equal(result.allowed, true);
@@ -455,13 +624,13 @@ describe("permissionService", () => {
           thread,
           member as any,
           "sketchbook",
-          false
+          false,
         );
 
         assert.equal(result.allowed, false);
         assert.equal(
           result.reason,
-          permissionService.PermissionDeniedReason.CHANNEL_NOT_ALLOWED
+          permissionService.PermissionDeniedReason.CHANNEL_NOT_ALLOWED,
         );
       });
     });
@@ -539,7 +708,7 @@ describe("permissionService", () => {
         guildId,
         channel,
         member as any,
-        "sketchbook"
+        "sketchbook",
       );
 
       assert.equal(result, true);
@@ -559,7 +728,7 @@ describe("permissionService", () => {
         guildId,
         channel,
         member as any,
-        "sketchbook"
+        "sketchbook",
       );
 
       assert.equal(result, false);
@@ -571,7 +740,7 @@ describe("permissionService", () => {
       const result = { allowed: true };
       const message = permissionService.getPermissionDeniedMessageForResult(
         result,
-        Locale.EnglishUS
+        Locale.EnglishUS,
       );
       assert.equal(message, "");
     });
@@ -583,7 +752,7 @@ describe("permissionService", () => {
       };
       const message = permissionService.getPermissionDeniedMessageForResult(
         result,
-        Locale.EnglishUS
+        Locale.EnglishUS,
       );
       assert.ok(message.length > 0);
     });
@@ -596,7 +765,7 @@ describe("permissionService", () => {
       };
       const message = permissionService.getPermissionDeniedMessageForResult(
         result,
-        Locale.EnglishUS
+        Locale.EnglishUS,
       );
       assert.ok(message.length > 0);
       assert.ok(message.includes("30") || message.includes("second"));
@@ -609,7 +778,7 @@ describe("permissionService", () => {
       };
       const message = permissionService.getPermissionDeniedMessageForResult(
         result,
-        Locale.EnglishUS
+        Locale.EnglishUS,
       );
       assert.ok(message.length > 0);
     });
@@ -621,7 +790,7 @@ describe("permissionService", () => {
       };
       const message = permissionService.getPermissionDeniedMessageForResult(
         result,
-        Locale.EnglishUS
+        Locale.EnglishUS,
       );
       assert.ok(message.length > 0);
     });
@@ -633,7 +802,7 @@ describe("permissionService", () => {
       };
       const message = permissionService.getPermissionDeniedMessageForResult(
         result,
-        Locale.EnglishUS
+        Locale.EnglishUS,
       );
       assert.ok(message.length > 0);
     });

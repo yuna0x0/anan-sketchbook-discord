@@ -20,6 +20,7 @@ import {
   GuildMember,
   MessageFlags,
 } from "discord.js";
+import { APIInteractionGuildMember } from "discord-api-types/v10";
 import { config } from "dotenv";
 import { commands } from "./commands/index.js";
 import { getResponseMessage } from "./locales/index.js";
@@ -97,9 +98,7 @@ async function handleAutocomplete(
  * Uses a catch-all approach: any channel with an `id` property can be checked.
  * This ensures compatibility with any future Discord channel types.
  */
-function isPermissionCheckChannel(
-  channel: unknown,
-): channel is {
+function isPermissionCheckChannel(channel: unknown): channel is {
   id: string;
   isThread: () => boolean;
   parentId?: string | null;
@@ -137,7 +136,10 @@ async function handleChatInputCommand(
       const channel = isPermissionCheckChannel(interaction.channel)
         ? interaction.channel
         : null;
-      const member = interaction.member as GuildMember | null;
+      const member = interaction.member as
+        | GuildMember
+        | APIInteractionGuildMember
+        | null;
 
       const permissionResult = checkPermissions(
         guildId,

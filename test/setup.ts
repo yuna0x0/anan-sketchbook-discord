@@ -201,6 +201,31 @@ export function createMockMember(
 }
 
 /**
+ * Creates a mock APIInteractionGuildMember-like object for permission testing.
+ * This simulates the raw API response where roles is a string[] instead of a Collection.
+ */
+export function createMockAPIMember(
+  userId: string,
+  roleIds: string[],
+): {
+  user: { id: string };
+  roles: string[];
+  permissions: string;
+  joined_at: string;
+  deaf: boolean;
+  mute: boolean;
+} {
+  return {
+    user: { id: userId },
+    roles: roleIds,
+    permissions: "0",
+    joined_at: new Date().toISOString(),
+    deaf: false,
+    mute: false,
+  };
+}
+
+/**
  * Creates a mock channel-like object for permission testing.
  */
 export function createMockChannel(
