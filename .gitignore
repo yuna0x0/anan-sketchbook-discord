@@ -143,3 +143,12 @@ vite.config.ts.timestamp-*
 .vite/
 
 .DS_Store
+
+# Database files
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Test data
+test/.test-data/

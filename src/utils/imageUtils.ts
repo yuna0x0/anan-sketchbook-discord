@@ -7,8 +7,8 @@
 import { loadImage, Image } from "canvas";
 import sharp from "sharp";
 import { Locale } from "discord.js";
-import { RGBColor } from "../config.js";
-import { getImageFormatErrorMessage } from "../locales.js";
+import { RGBColor } from "../config/types.js";
+import { getImageFormatErrorMessage } from "../locales/index.js";
 
 // =============================================================================
 // Image Format Types

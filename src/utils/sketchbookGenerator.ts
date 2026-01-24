@@ -6,18 +6,17 @@
 
 import { createCanvas, registerFont, CanvasRenderingContext2D } from "canvas";
 import { existsSync } from "fs";
+import { FONTS, FontId, getFontPath } from "../config/fonts.js";
+import { RGBColor } from "../config/types.js";
 import {
   SKETCHBOOK_CONFIG,
   SKETCHBOOK_FALLBACK_FONTS,
   SKETCHBOOK_DEFAULT_FONT,
-  FONTS,
-  FontId,
-  getFontPath,
   getSketchbookAssetPath,
   getEmotionImagePath,
   EmotionTypeValue,
   EmotionType,
-} from "../config.js";
+} from "../config/sketchbook/index.js";
 import {
   wrapText,
   measureTextBlock,
@@ -37,7 +36,6 @@ import {
   loadImageFromPath,
   loadImageFromBuffer,
 } from "./imageUtils.js";
-import { RGBColor } from "../config.js";
 
 /**
  * Horizontal alignment options
@@ -253,57 +251,6 @@ function findOptimalFontSize(
     lineHeight: bestLineHeight,
     blockHeight: bestBlockHeight,
   };
-}
-
-/**
- * Draw text on a canvas with color segments
- */
-function drawTextWithColors(
-  ctx: CanvasRenderingContext2D,
-  lines: string[],
-  startX: number,
-  startY: number,
-  regionWidth: number,
-  lineHeight: number,
-  align: HAlign,
-  textColor: RGBColor,
-  bracketColor: RGBColor,
-): void {
-  let y = startY;
-  let inBracket = false;
-
-  for (const line of lines) {
-    const lineWidth = measureTextWidth(ctx, line);
-
-    // Calculate X position based on alignment
-    let x: number;
-    if (align === "left") {
-      x = startX;
-    } else if (align === "center") {
-      x = startX + (regionWidth - lineWidth) / 2;
-    } else {
-      x = startX + regionWidth - lineWidth;
-    }
-
-    // Parse and draw colored segments
-    const { segments, inBracket: newInBracket } = parseColorSegments(
-      line,
-      inBracket,
-      bracketColor,
-      textColor,
-    );
-    inBracket = newInBracket;
-
-    for (const segment of segments) {
-      if (segment.text) {
-        ctx.fillStyle = rgbToCss(segment.color);
-        ctx.fillText(segment.text, x, y);
-        x += measureTextWidth(ctx, segment.text);
-      }
-    }
-
-    y += lineHeight;
-  }
 }
 
 /**

@@ -5,6 +5,7 @@
  * This bot allows users to:
  * - Generate images with text and/or images on Anan's sketchbook (/sketchbook)
  * - Generate in-game style dialogue images with characters (/dialogue)
+ * - Manage bot settings for guild administrators (/settings)
  */
 
 import {
@@ -14,11 +15,24 @@ import {
   Interaction,
   AutocompleteInteraction,
   ChatInputCommandInteraction,
+  ModalSubmitInteraction,
   Locale,
+  GuildMember,
+  MessageFlags,
 } from "discord.js";
 import { config } from "dotenv";
 import { commands } from "./commands/index.js";
-import { getResponseMessage } from "./locales.js";
+import { getResponseMessage } from "./locales/index.js";
+import { closeDatabase } from "./database/index.js";
+import { initializeDatabase } from "./database/migrate.js";
+import {
+  checkPermissions,
+  getPermissionDeniedMessageForResult,
+} from "./services/permissionService.js";
+import {
+  handleModalSubmit as handleSettingsModalSubmit,
+  isSettingsCustomId,
+} from "./commands/settings/index.js";
 
 // Load environment variables from .env file
 config();
@@ -52,6 +66,7 @@ client.once(Events.ClientReady, (readyClient) => {
   console.log("Available commands:");
   console.log("  /sketchbook - Generate sketchbook images");
   console.log("  /dialogue   - Generate dialogue images");
+  console.log("  /settings   - Manage bot settings (admin only)");
   console.log("----------------------------------------");
   console.log("Bot is ready and listening for commands!");
   console.log("");
@@ -78,6 +93,25 @@ async function handleAutocomplete(
 }
 
 /**
+ * Check if a channel can be permission checked.
+ * Uses a catch-all approach: any channel with an `id` property can be checked.
+ * This ensures compatibility with any future Discord channel types.
+ */
+function isPermissionCheckChannel(
+  channel: unknown,
+): channel is {
+  id: string;
+  isThread: () => boolean;
+  parentId?: string | null;
+} {
+  if (!channel || typeof channel !== "object") {
+    return false;
+  }
+  const ch = channel as { id?: string };
+  return typeof ch.id === "string";
+}
+
+/**
  * Handle chat input command interactions
  */
 async function handleChatInputCommand(
@@ -93,7 +127,41 @@ async function handleChatInputCommand(
     return;
   }
 
+  // Get user's locale for ephemeral responses (permission errors are always ephemeral)
+  const locale = interaction.locale || Locale.EnglishUS;
+
   try {
+    // Check permissions before executing command (skip for settings command as it has its own checks)
+    if (commandName !== "settings") {
+      const guildId = interaction.guildId;
+      const channel = isPermissionCheckChannel(interaction.channel)
+        ? interaction.channel
+        : null;
+      const member = interaction.member as GuildMember | null;
+
+      const permissionResult = checkPermissions(
+        guildId,
+        channel,
+        member,
+        commandName,
+        true, // Consume rate limit
+      );
+
+      if (!permissionResult.allowed) {
+        const errorMessage = getPermissionDeniedMessageForResult(
+          permissionResult,
+          locale,
+        );
+
+        // Permission errors are always ephemeral
+        await interaction.reply({
+          content: errorMessage,
+          flags: MessageFlags.Ephemeral,
+        });
+        return;
+      }
+    }
+
     console.log(
       `[${new Date().toISOString()}] Command: /${commandName} | User: ${interaction.user.tag} (${interaction.user.id}) | Guild: ${interaction.guild?.name ?? "DM"}`,
     );
@@ -102,14 +170,19 @@ async function handleChatInputCommand(
     console.error(`Error executing command /${commandName}:`, error);
 
     // Try to respond with a localized error message
-    const locale = interaction.locale || Locale.EnglishUS;
     const errorMessage = getResponseMessage("genericError", locale);
 
     try {
       if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({ content: errorMessage, ephemeral: true });
+        await interaction.followUp({
+          content: errorMessage,
+          flags: MessageFlags.Ephemeral,
+        });
       } else {
-        await interaction.reply({ content: errorMessage, ephemeral: true });
+        await interaction.reply({
+          content: errorMessage,
+          flags: MessageFlags.Ephemeral,
+        });
       }
     } catch (replyError) {
       console.error("Failed to send error response:", replyError);
@@ -118,7 +191,44 @@ async function handleChatInputCommand(
 }
 
 /**
- * Handle interaction events (slash commands and autocomplete)
+ * Handle modal submit interactions
+ */
+async function handleModalSubmit(
+  interaction: ModalSubmitInteraction,
+): Promise<void> {
+  try {
+    // Check if this is a settings modal
+    if (isSettingsCustomId(interaction.customId)) {
+      await handleSettingsModalSubmit(interaction);
+      return;
+    }
+
+    // Add other modal handlers here as needed
+  } catch (error) {
+    console.error("Error handling modal submit:", error);
+    const locale = interaction.locale || Locale.EnglishUS;
+    const errorMessage = getResponseMessage("genericError", locale);
+
+    try {
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: errorMessage,
+          flags: MessageFlags.Ephemeral,
+        });
+      } else {
+        await interaction.reply({
+          content: errorMessage,
+          flags: MessageFlags.Ephemeral,
+        });
+      }
+    } catch (replyError) {
+      console.error("Failed to send error response:", replyError);
+    }
+  }
+}
+
+/**
+ * Handle interaction events (slash commands, autocomplete, and modals)
  */
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   // Handle autocomplete interactions
@@ -130,6 +240,12 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   // Handle chat input commands (slash commands)
   if (interaction.isChatInputCommand()) {
     await handleChatInputCommand(interaction);
+    return;
+  }
+
+  // Handle modal submit interactions
+  if (interaction.isModalSubmit()) {
+    await handleModalSubmit(interaction);
     return;
   }
 });
@@ -154,6 +270,10 @@ client.on(Events.Warn, (warning) => {
 function shutdown(): void {
   console.log("");
   console.log("Shutting down...");
+
+  // Close database connection
+  closeDatabase();
+
   client.destroy();
   process.exit(0);
 }
@@ -173,8 +293,13 @@ process.on("uncaughtException", (error) => {
   shutdown();
 });
 
-// Login to Discord
+// Initialize database and start bot
 console.log("Starting Manosaba Discord Bot...");
+
+// Initialize database with migrations
+initializeDatabase();
+
+// Connect to Discord
 console.log("Connecting to Discord...");
 
 client.login(token).catch((error) => {

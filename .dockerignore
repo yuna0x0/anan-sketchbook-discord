@@ -1,0 +1,49 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Git
+.git/
+.gitignore
+
+# Development files
+*.log
+*.md
+!README.md
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Database files (will be mounted as volume)
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Docker files (not needed inside container)
+Dockerfile
+docker-compose.yml
+docker-compose*.yml
+.dockerignore
+
+# TypeScript config (not needed in production)
+tsconfig.json
+
+# Test files
+test/
+*.test.ts
+*.spec.ts
+__tests__/
+coverage/

@@ -8,7 +8,15 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "tsx src/index.ts",
-    "register": "tsx src/register.ts"
+    "register": "tsx src/register.ts",
+    "migrate": "tsx src/migrate-cli.ts",
+    "migrate:status": "tsx src/migrate-cli.ts status",
+    "migrate:rollback": "tsx src/migrate-cli.ts rollback",
+    "test": "node --import tsx --test --test-concurrency=1 test/**/*.test.ts",
+    "test:utils": "node --import tsx --test test/utils/*.test.ts",
+    "test:config": "node --import tsx --test test/config/*.test.ts",
+    "test:database": "node --import tsx --test --test-concurrency=1 test/database/*.test.ts",
+    "test:services": "node --import tsx --test --test-concurrency=1 test/services/*.test.ts"
   },
   "keywords": [
     "discord",

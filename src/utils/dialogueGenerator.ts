@@ -11,24 +11,26 @@ import {
   Image,
 } from "canvas";
 import { existsSync } from "fs";
+import { FONTS, FontId } from "../config/fonts.js";
+import { RGBColor } from "../config/types.js";
+import {
+  CharacterId,
+  NameConfigLocale,
+  getCharacter,
+  getNameConfig,
+  FALLBACK_NAME_LOCALE,
+} from "../config/dialogue/characters.js";
+import { StretchMode } from "../config/dialogue/backgrounds.js";
 import {
   DIALOGUE_CONFIG,
-  FONTS,
-  FontId,
   DIALOGUE_TEXT_DEFAULT_FONT,
   DIALOGUE_TEXT_FALLBACK_FONTS,
-  CharacterId,
-  StretchMode,
-  NameConfigLocale,
   getCharacterImagePath,
   getBackgroundImagePath,
   getDialogueFontPath,
   getDialogueOverlayPath,
-  getCharacter,
-  getNameConfig,
   getCharacterNameFontForLocale,
-  FALLBACK_NAME_LOCALE,
-} from "../config.js";
+} from "../config/dialogue/index.js";
 import {
   parseTextWithEmoji,
   loadEmojiImage,
@@ -39,7 +41,6 @@ import {
   loadImageFromPath,
   loadImageFromBuffer,
 } from "./imageUtils.js";
-import { RGBColor } from "../config.js";
 
 // Track registered fonts
 const registeredFonts = new Set<string>();

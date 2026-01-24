@@ -7,7 +7,7 @@
 
 import { CanvasRenderingContext2D } from "canvas";
 import twemojiModule, { Twemoji } from "@twemoji/api";
-import { RGBColor } from "../config.js";
+import { RGBColor } from "../config/types.js";
 
 // Cast to proper type for runtime usage
 const twemoji = twemojiModule as unknown as Twemoji;

@@ -1,211 +1,10 @@
-import { fileURLToPath } from "url";
-import { dirname, join, resolve } from "path";
-import { existsSync } from "fs";
+/**
+ * Dialogue Characters Configuration
+ * Character definitions including expressions, theme colors, and localized name configs
+ */
+
 import { Locale } from "discord.js";
-
-// Get the directory of the current module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Find the assets directory by checking multiple possible locations
-function findAssetsDir(): string {
-  // Possible locations for the assets directory
-  const possiblePaths = [
-    // When running from dist/ (production build)
-    join(__dirname, "..", "..", "assets"),
-    // When running from src/ (development with tsx)
-    join(__dirname, "..", "assets"),
-    // Relative to current working directory
-    join(process.cwd(), "assets"),
-  ];
-
-  for (const path of possiblePaths) {
-    const resolvedPath = resolve(path);
-    if (existsSync(resolvedPath)) {
-      return resolvedPath;
-    }
-  }
-
-  // Default fallback (will likely fail, but provides a clear error)
-  console.error("Could not find assets directory. Searched paths:");
-  for (const path of possiblePaths) {
-    console.error(`  - ${resolve(path)}`);
-  }
-  return resolve(possiblePaths[0]);
-}
-
-// Assets directory path
-export const ASSETS_DIR = findAssetsDir();
-
-// =============================================================================
-// Sketchbook Configuration
-// =============================================================================
-
-// Emotion types available for the sketchbook
-export const EmotionType = {
-  NORMAL: "normal",
-  HAPPY: "happy",
-  ANGRY: "angry",
-  SPEECHLESS: "speechless",
-  BLUSH: "blush",
-  YANDERE: "yandere",
-  CLOSED_EYES: "closed_eyes",
-  SAD: "sad",
-  SCARED: "scared",
-  EXCITED: "excited",
-  SURPRISED: "surprised",
-  CRYING: "crying",
-} as const;
-
-export type EmotionTypeValue = (typeof EmotionType)[keyof typeof EmotionType];
-
-// Expression option for command input (includes "random")
-export const ExpressionOption = {
-  ...EmotionType,
-  RANDOM: "random",
-} as const;
-
-export type ExpressionOptionValue =
-  (typeof ExpressionOption)[keyof typeof ExpressionOption];
-
-// Mapping from emotion type to image file name
-export const EMOTION_IMAGE_MAP: Record<EmotionTypeValue, string> = {
-  [EmotionType.NORMAL]: "base.png",
-  [EmotionType.HAPPY]: "happy.png",
-  [EmotionType.ANGRY]: "angry.png",
-  [EmotionType.SPEECHLESS]: "speechless.png",
-  [EmotionType.BLUSH]: "blush.png",
-  [EmotionType.YANDERE]: "yandere.png",
-  [EmotionType.CLOSED_EYES]: "closed_eyes.png",
-  [EmotionType.SAD]: "sad.png",
-  [EmotionType.SCARED]: "scared.png",
-  [EmotionType.EXCITED]: "excited.png",
-  [EmotionType.SURPRISED]: "surprised.png",
-  [EmotionType.CRYING]: "crying.png",
-};
-
-// Get a random emotion
-export function getRandomEmotion(): EmotionTypeValue {
-  const emotions = Object.values(EmotionType);
-  const randomIndex = Math.floor(Math.random() * emotions.length);
-  return emotions[randomIndex];
-}
-
-// =============================================================================
-// Font System
-// =============================================================================
-
-// Available fonts for sketchbook and dialogue systems
-export const FONTS = {
-  miSans: {
-    name: "MiSans Bold",
-    file: "MiSans-Bold.ttf",
-  },
-  notoSansTCBlack: {
-    name: "Noto Sans TC Black",
-    file: "NotoSansTC-Black.otf",
-  },
-  notoSansKRBlack: {
-    name: "Noto Sans KR Black",
-    file: "NotoSansKR-Black.otf",
-  },
-  notoSansThaiBlack: {
-    name: "Noto Sans Thai Black",
-    file: "NotoSansThai-Black.otf",
-  },
-  tsukuMinPr6N: {
-    name: "TsukuMin Pr6N",
-    file: "TsukushiMincho.otf",
-  },
-  notoSerifTCSemiBold: {
-    name: "Noto Serif TC SemiBold",
-    file: "NotoSerifTC-SemiBold.otf",
-  },
-  notoSerifKRSemiBold: {
-    name: "Noto Serif KR SemiBold",
-    file: "NotoSerifKR-SemiBold.otf",
-  },
-  notoSerifThaiSemiBold: {
-    name: "Noto Serif Thai SemiBold",
-    file: "NotoSerifThai-SemiBold.otf",
-  },
-} as const;
-
-export type FontId = keyof typeof FONTS;
-
-// Get the full path to a font file in the shared fonts directory
-export function getFontPath(fontId: FontId): string {
-  const font = FONTS[fontId];
-  return join(ASSETS_DIR, "fonts", font.file);
-}
-
-// =============================================================================
-// Sketchbook Font Configuration
-// =============================================================================
-
-// Default font for sketchbook text
-export const SKETCHBOOK_DEFAULT_FONT: FontId = "miSans";
-
-// Fallback fonts for sketchbook (used for characters not supported by the primary font)
-export const SKETCHBOOK_FALLBACK_FONTS: FontId[] = [
-  "miSans",
-  "notoSansTCBlack",
-  "notoSansKRBlack",
-  "notoSansThaiBlack",
-];
-
-// Sketchbook text area configuration
-// These coordinates define the drawable area on the sketchbook image
-
-export const SKETCHBOOK_CONFIG = {
-  // Top-left corner of the text/image area (x, y)
-  textBoxTopLeft: { x: 119, y: 450 } as const,
-  // Bottom-right corner of the text/image area (x, y)
-  textBoxBottomRight: { x: 398, y: 625 } as const,
-  // Maximum font height in pixels
-  maxFontHeight: 64,
-  // Line spacing multiplier
-  lineSpacing: 0.15,
-  // Default text color (RGB)
-  defaultTextColor: { r: 0, g: 0, b: 0 } as const,
-  // Bracket text color (RGB) - for text inside [] or brackets
-  bracketTextColor: { r: 128, g: 0, b: 128 } as const,
-  // Overlay image file name
-  overlayImage: "base_overlay.png",
-  // Padding for image paste
-  imagePadding: 12,
-} as const;
-
-// Get the full path to a sketchbook asset file
-export function getSketchbookAssetPath(filename: string): string {
-  return join(ASSETS_DIR, "sketchbook", filename);
-}
-
-// Get the full path to an emotion base image
-export function getEmotionImagePath(emotion: EmotionTypeValue): string {
-  return getSketchbookAssetPath(EMOTION_IMAGE_MAP[emotion]);
-}
-
-// Get the full path to the sketchbook default font
-export function getSketchbookFontPath(): string {
-  return getFontPath(SKETCHBOOK_DEFAULT_FONT);
-}
-
-// Get all fallback font paths for sketchbook
-export function getSketchbookFallbackFontPaths(): string[] {
-  return SKETCHBOOK_FALLBACK_FONTS.map((fontId) => getFontPath(fontId));
-}
-
-// =============================================================================
-// Dialogue Configuration
-// =============================================================================
-
-// RGB color type
-export interface RGBColor {
-  r: number;
-  g: number;
-  b: number;
-}
+import { RGBColor } from "../types.js";
 
 // Name text configuration for rendering character names
 export interface NameTextConfig {
@@ -229,35 +28,6 @@ export interface CharacterInfo {
   expressions: string[];
   themeColor: RGBColor;
   nameConfig: LocalizedNameConfig;
-}
-
-// Get expression number from expression name for a character
-export function getExpressionNumber(
-  character: CharacterInfo,
-  expressionName: string,
-): number | undefined {
-  const index = character.expressions.indexOf(expressionName);
-  return index >= 0 ? index + 1 : undefined;
-}
-
-// Get all expression names for a character
-export function getExpressionNames(character: CharacterInfo): string[] {
-  return character.expressions;
-}
-
-// Fallback locale when requested locale is not available for a character
-export const FALLBACK_NAME_LOCALE: NameConfigLocale = Locale.Japanese;
-
-// Get name config for a specific locale, falling back to FALLBACK_NAME_LOCALE
-export function getNameConfig(
-  character: CharacterInfo,
-  locale: NameConfigLocale,
-): NameTextConfig[] {
-  return (
-    character.nameConfig[locale] ??
-    character.nameConfig[FALLBACK_NAME_LOCALE] ??
-    []
-  );
 }
 
 // All available characters
@@ -1542,169 +1312,31 @@ export function getCharacterIds(): CharacterId[] {
   return Object.keys(CHARACTERS) as CharacterId[];
 }
 
-// =============================================================================
-// Dialogue Font Configuration
-// =============================================================================
-
-// Default font for dialogue text
-export const DIALOGUE_TEXT_DEFAULT_FONT: FontId = "tsukuMinPr6N";
-
-// Fallback fonts for dialogue text
-export const DIALOGUE_TEXT_FALLBACK_FONTS: FontId[] = [
-  "tsukuMinPr6N",
-  "notoSerifTCSemiBold",
-  "notoSerifKRSemiBold",
-  "notoSerifThaiSemiBold",
-];
-
-// Character name font mapping by Discord locale
-export const CHARACTER_NAME_LOCALE_FONTS: Partial<Record<Locale, FontId>> = {
-  [Locale.Japanese]: "tsukuMinPr6N",
-  [Locale.ChineseCN]: "notoSerifTCSemiBold",
-  [Locale.ChineseTW]: "notoSerifTCSemiBold",
-};
-
-// Get character name font for a specific locale
-export function getCharacterNameFontForLocale(locale: Locale): FontId {
-  return CHARACTER_NAME_LOCALE_FONTS[locale] ?? "tsukuMinPr6N";
+// Get expression number from expression name for a character
+export function getExpressionNumber(
+  character: CharacterInfo,
+  expressionName: string,
+): number | undefined {
+  const index = character.expressions.indexOf(expressionName);
+  return index >= 0 ? index + 1 : undefined;
 }
 
-// Background stretch modes
-export const STRETCH_MODES = {
-  stretch: "Stretch to fill",
-  stretch_x: "Stretch horizontally",
-  stretch_y: "Stretch vertically",
-  zoom_x: "Zoom horizontally (keep ratio)",
-  zoom_y: "Zoom vertically (keep ratio)",
-  original: "Original size (centered)",
-} as const;
-
-export type StretchMode = keyof typeof STRETCH_MODES;
-
-// Available backgrounds (simplified list - first variant of each)
-export const BACKGROUNDS: Record<string, string> = {
-  bg_001_001: "Background_001_001.png",
-  bg_001_002: "Background_001_002.png",
-  bg_002_001: "Background_002_001.png",
-  bg_003_001: "Background_003_001.png",
-  bg_003_002: "Background_003_002.png",
-  bg_004_001: "Background_004_001.png",
-  bg_005_001: "Background_005_001.png",
-  bg_005_002: "Background_005_002.png",
-  bg_006_001: "Background_006_001.png",
-  bg_007_001: "Background_007_001.png",
-  bg_007_002: "Background_007_002.png",
-  bg_009_001: "Background_009_001.png",
-  bg_009_002: "Background_009_002.png",
-  bg_010_001: "Background_010_001.png",
-  bg_011_001: "Background_011_001.png",
-  bg_012_001: "Background_012_001.png",
-  bg_013_001: "Background_013_001.png",
-  bg_014_001: "Background_014_001.png",
-  bg_016_001: "Background_016_001.png",
-  bg_017_001: "Background_017_001.png",
-  bg_017_002: "Background_017_002.png",
-  bg_018_001: "Background_018_001.png",
-  bg_019_001: "Background_019_001.png",
-  bg_019_002: "Background_019_002.png",
-  bg_020_001: "Background_020_001.png",
-  bg_021_001: "Background_021_001.png",
-  bg_022_001: "Background_022_001.png",
-  bg_022_002: "Background_022_002.png",
-  bg_022_003: "Background_022_003.png",
-  bg_022_004: "Background_022_004.png",
-  bg_023_001: "Background_023_001.png",
-  bg_023_002: "Background_023_002.png",
-  bg_023_003: "Background_023_003.png",
-  bg_023_004: "Background_023_004.png",
-  bg_023_005: "Background_023_005.png",
-  bg_023_006: "Background_023_006.png",
-  bg_023_007: "Background_023_007.png",
-  bg_023_008: "Background_023_008.png",
-  bg_024_001: "Background_024_001.png",
-  bg_024_002: "Background_024_002.png",
-  bg_025_001: "Background_025_001.png",
-  bg_025_002: "Background_025_002.png",
-  bg_026_001: "Background_026_001.png",
-  bg_027_001: "Background_027_001.png",
-  bg_028_001: "Background_028_001.png",
-  bg_028_002: "Background_028_002.png",
-  bg_029_001: "Background_029_001.png",
-  bg_029_002: "Background_029_002.png",
-  bg_030_001: "Background_030_001.png",
-  bg_030_002: "Background_030_002.png",
-  bg_031_001: "Background_031_001.png",
-  bg_031_002: "Background_031_002.png",
-  bg_031_003: "Background_031_003.png",
-  bg_031_004: "Background_031_004.png",
-  bg_031_005: "Background_031_005.png",
-  bg_032_001: "Background_032_001.png",
-  bg_033_001: "Background_033_001.png",
-  bg_034_001: "Background_034_001.png",
-};
-
-export type BackgroundId = keyof typeof BACKGROUNDS;
-
-// Get all background IDs
-export function getBackgroundIds(): string[] {
-  return Object.keys(BACKGROUNDS);
+// Get all expression names for a character
+export function getExpressionNames(character: CharacterInfo): string[] {
+  return character.expressions;
 }
 
-// Dialogue canvas configuration
-export const DIALOGUE_CONFIG = {
-  // Canvas dimensions (matching the game's dialogue box)
-  canvasWidth: 2560,
-  canvasHeight: 834,
-  // Character sprite position
-  characterPosition: { x: 0, y: 134 },
-  // Text area boundaries
-  textPosition: { x: 728, y: 355 },
-  textAreaEnd: { x: 2339, y: 800 },
-  // Default text settings
-  defaultFontSize: 72,
-  lineHeightMultiplier: 1.2,
-  // Shadow settings
-  shadowOffset: { x: 2, y: 2 },
-  shadowColor: { r: 0, g: 0, b: 0 },
-  // Default text color
-  defaultTextColor: { r: 255, g: 255, b: 255 },
-} as const;
+// Fallback locale when requested locale is not available for a character
+export const FALLBACK_NAME_LOCALE: NameConfigLocale = Locale.Japanese;
 
-// Get the full path to a dialogue asset file
-export function getDialogueAssetPath(
-  type: "characters" | "backgrounds" | "ui",
-  ...parts: string[]
-): string {
-  return join(ASSETS_DIR, "dialogue", type, ...parts);
-}
-
-// Get character image path
-export function getCharacterImagePath(
-  characterId: string,
-  expression: number,
-): string {
-  return getDialogueAssetPath(
-    "characters",
-    characterId,
-    `${characterId}_${expression}.png`,
+// Get name config for a specific locale, falling back to FALLBACK_NAME_LOCALE
+export function getNameConfig(
+  character: CharacterInfo,
+  locale: NameConfigLocale,
+): NameTextConfig[] {
+  return (
+    character.nameConfig[locale] ??
+    character.nameConfig[FALLBACK_NAME_LOCALE] ??
+    []
   );
-}
-
-// Get background image path
-export function getBackgroundImagePath(backgroundId: string): string {
-  const filename = BACKGROUNDS[backgroundId];
-  if (!filename) {
-    throw new Error(`Unknown background ID: ${backgroundId}`);
-  }
-  return getDialogueAssetPath("backgrounds", filename);
-}
-
-// Get dialogue font path (uses the unified font system)
-export function getDialogueFontPath(fontId: FontId): string {
-  return getFontPath(fontId);
-}
-
-// Get UI overlay path
-export function getDialogueOverlayPath(): string {
-  return getDialogueAssetPath("ui", "overlay.png");
 }

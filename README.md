@@ -49,6 +49,24 @@ pnpm build
 pnpm start
 ```
 
+## Docker
+
+### Using Docker Compose
+
+```bash
+# Register commands
+docker compose run --rm register
+
+# Build and start the bot
+docker compose up -d
+
+# View logs
+docker compose logs -f
+
+# Stop the bot
+docker compose down
+```
+
 ## Commands
 
 ### `/sketchbook`

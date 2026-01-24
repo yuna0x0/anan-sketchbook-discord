@@ -1,0 +1,35 @@
+services:
+  bot:
+    build: .
+    container_name: anan-sketchbook-discord
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      # Override paths for Docker environment
+      - ASSETS_DIR=/app/assets
+      - DATA_DIR=/app/data
+    volumes:
+      # Mount assets directory (read-only)
+      - ./assets:/app/assets:ro
+      # Mount data directory for persistent database storage
+      - ./data:/app/data
+    # Uncomment to use a .env file with different name
+    # env_file:
+    #   - .env.production
+
+  # One-off command to register slash commands with Discord
+  # Usage: docker compose run --rm register
+  register:
+    build: .
+    env_file:
+      - .env
+    environment:
+      - ASSETS_DIR=/app/assets
+      - DATA_DIR=/app/data
+    volumes:
+      - ./assets:/app/assets:ro
+      - ./data:/app/data
+    command: ["node", "dist/register.js"]
+    profiles:
+      - tools

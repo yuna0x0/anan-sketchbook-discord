@@ -14,25 +14,26 @@ import {
   AutocompleteInteraction,
   Locale,
 } from "discord.js";
+import { FontId, FONTS } from "../config/fonts.js";
 import {
   CHARACTERS,
   CharacterId,
-  FontId,
-  FONTS,
-  StretchMode,
   NameConfigLocale,
+  getExpressionNumber,
+  FALLBACK_NAME_LOCALE,
+} from "../config/dialogue/characters.js";
+import {
+  StretchMode,
   STRETCH_MODES,
   BACKGROUNDS,
   getBackgroundIds,
-  getExpressionNumber,
-  ExpressionOption,
-  FALLBACK_NAME_LOCALE,
-  DIALOGUE_TEXT_DEFAULT_FONT,
-} from "../config.js";
+} from "../config/dialogue/backgrounds.js";
+import { DIALOGUE_TEXT_DEFAULT_FONT } from "../config/dialogue/index.js";
+import { ExpressionOption } from "../config/sketchbook/index.js";
 import { generateDialogueImage } from "../utils/dialogueGenerator.js";
 import { isImageSupported } from "../utils/imageUtils.js";
-import { getImageFormatErrorMessage } from "../locales.js";
 import {
+  getImageFormatErrorMessage,
   DIALOGUE_COMMAND_DESCRIPTION_LOCALIZATIONS,
   DIALOGUE_OPTION_LOCALIZATIONS,
   CHARACTER_NAME_LOCALIZATIONS,
@@ -45,7 +46,9 @@ import {
   getDialogueMessage,
   getLocalizedExpressionName,
   EXPRESSION_DISPLAY_NAME_LOCALIZATIONS,
-} from "../locales.js";
+  resolveLocale,
+} from "../locales/index.js";
+import { getGuildDefaultLanguage } from "../database/repositories/guildSettings.js";
 
 // Supported locales for name display in dialogue (subset of Discord Locale)
 const SUPPORTED_NAME_LOCALES: NameConfigLocale[] = [
@@ -256,7 +259,7 @@ export async function autocomplete(
         localizedName: randomName,
         displayName: randomName,
       },
-      ...character.expressions.map((expressionId, index) => {
+      ...character.expressions.map((expressionId) => {
         const localizedName = getLocalizedExpressionName(
           expressionId,
           userLocale,
@@ -322,11 +325,20 @@ export async function autocomplete(
 export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  // Get user's locale for localized responses
-  const locale = interaction.locale || Locale.EnglishUS;
-
   // Defer reply since image generation may take a moment
   const sendToDM = interaction.options.getBoolean("dm") ?? false;
+
+  // Get the effective locale for responses
+  // For public messages in guilds, use the guild's default language if set
+  const isPublic = !sendToDM;
+  const guildDefaultLanguage = interaction.guildId
+    ? getGuildDefaultLanguage(interaction.guildId)
+    : null;
+  const locale = resolveLocale(
+    interaction.locale || Locale.EnglishUS,
+    guildDefaultLanguage,
+    isPublic,
+  );
   await interaction.deferReply({
     flags: sendToDM ? MessageFlags.Ephemeral : undefined,
   });

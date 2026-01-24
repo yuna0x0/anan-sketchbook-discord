@@ -13,20 +13,19 @@ import {
   ApplicationIntegrationType,
   InteractionContextType,
 } from "discord.js";
+import { FONTS, FontId } from "../config/fonts.js";
 import {
   EmotionTypeValue,
   ExpressionOption,
   ExpressionOptionValue,
   getRandomEmotion,
-  FONTS,
-  FontId,
   SKETCHBOOK_DEFAULT_FONT,
-} from "../config.js";
+} from "../config/sketchbook/index.js";
 import { generateSketchbookImage } from "../utils/sketchbookGenerator.js";
 import { isImageSupported } from "../utils/imageUtils.js";
-import { getImageFormatErrorMessage } from "../locales.js";
 import { WrapAlgorithm } from "../utils/textWrapper.js";
 import {
+  getImageFormatErrorMessage,
   COMMAND_DESCRIPTION_LOCALIZATIONS,
   OPTION_DESCRIPTION_LOCALIZATIONS,
   EXPRESSION_DISPLAY_NAME_LOCALIZATIONS,
@@ -37,7 +36,9 @@ import {
   getResponseMessage,
   getSketchbookMessage,
   getSketchbookAttachmentDescription,
-} from "../locales.js";
+  resolveLocale,
+} from "../locales/index.js";
+import { getGuildDefaultLanguage } from "../database/repositories/guildSettings.js";
 import { Locale } from "discord.js";
 
 // Build font choices with localizations
@@ -292,11 +293,20 @@ export const data = new SlashCommandBuilder()
 export async function execute(
   interaction: ChatInputCommandInteraction,
 ): Promise<void> {
-  // Get user's locale for localized responses
-  const locale = interaction.locale || Locale.EnglishUS;
-
   // Defer reply since image generation may take a moment
   const sendToDM = interaction.options.getBoolean("dm") ?? false;
+
+  // Get the effective locale for responses
+  // For public messages in guilds, use the guild's default language if set
+  const isPublic = !sendToDM;
+  const guildDefaultLanguage = interaction.guildId
+    ? getGuildDefaultLanguage(interaction.guildId)
+    : null;
+  const locale = resolveLocale(
+    interaction.locale || Locale.EnglishUS,
+    guildDefaultLanguage,
+    isPublic,
+  );
   await interaction.deferReply({
     flags: sendToDM ? MessageFlags.Ephemeral : undefined,
   });
