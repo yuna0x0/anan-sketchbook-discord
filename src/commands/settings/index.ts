@@ -37,7 +37,9 @@ import type {
   RoleSelectMenuInteraction,
   ModalSubmitInteraction,
   InteractionResponse,
+  GuildMember,
 } from "discord.js";
+import type { APIInteractionGuildMember } from "discord-api-types/v10";
 import { canManageBot } from "../../services/permissionService.js";
 import {
   SETTINGS_COMMAND_LOCALIZATIONS,
@@ -140,7 +142,11 @@ export async function execute(
   // Check permissions
   // Pass guild owner ID for API member type support
   const guildOwnerId = interaction.guild?.ownerId;
-  if (!canManageBot(interaction.member as any, guildOwnerId)) {
+  const member = interaction.member as
+    | GuildMember
+    | APIInteractionGuildMember
+    | null;
+  if (!canManageBot(member, guildOwnerId)) {
     await interaction.reply({
       content: "❌ " + getSettingsMessage("noPermission", locale),
       flags: MessageFlags.Ephemeral,

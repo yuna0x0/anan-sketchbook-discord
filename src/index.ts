@@ -97,8 +97,8 @@ async function handleAutocomplete(
 
 /**
  * Check if a channel can be permission checked.
- * Uses a catch-all approach: any channel with an `id` property can be checked.
- * This ensures compatibility with any future Discord channel types.
+ * Validates that the channel has required properties for permission checking.
+ * This ensures compatibility with any Discord channel type.
  */
 function isPermissionCheckChannel(channel: unknown): channel is {
   id: string;
@@ -108,8 +108,8 @@ function isPermissionCheckChannel(channel: unknown): channel is {
   if (!channel || typeof channel !== "object") {
     return false;
   }
-  const ch = channel as { id?: string };
-  return typeof ch.id === "string";
+  const ch = channel as { id?: unknown; isThread?: unknown };
+  return typeof ch.id === "string" && typeof ch.isThread === "function";
 }
 
 /**
