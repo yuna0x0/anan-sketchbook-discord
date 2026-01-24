@@ -11,15 +11,17 @@
  */
 
 import {
-  ButtonInteraction,
-  StringSelectMenuInteraction,
-  ChannelSelectMenuInteraction,
-  RoleSelectMenuInteraction,
   Locale,
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+} from "discord.js";
+import type {
+  ButtonInteraction,
+  StringSelectMenuInteraction,
+  ChannelSelectMenuInteraction,
+  RoleSelectMenuInteraction,
 } from "discord.js";
 import {
   setCommandEnabled,

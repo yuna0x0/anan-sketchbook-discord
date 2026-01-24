@@ -6,13 +6,15 @@
 
 import {
   SlashCommandBuilder,
-  ChatInputCommandInteraction,
   AttachmentBuilder,
   MessageFlags,
   ApplicationIntegrationType,
   InteractionContextType,
-  AutocompleteInteraction,
   Locale,
+} from "discord.js";
+import type {
+  ChatInputCommandInteraction,
+  AutocompleteInteraction,
 } from "discord.js";
 import { FontId, FONTS } from "../config/fonts.js";
 import {

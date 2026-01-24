@@ -673,6 +673,52 @@ describe("permissionService", () => {
       const result = permissionService.isAdmin(null);
       assert.equal(result, false);
     });
+
+    describe("APIInteractionGuildMember handling", () => {
+      it("should return true for API member with Administrator permission", () => {
+        const userId = randomUserId();
+        const member = createMockAPIMember(userId, [], { hasAdmin: true });
+
+        const result = permissionService.isAdmin(member as any);
+        assert.equal(result, true);
+      });
+
+      it("should return true for API member with ManageGuild permission", () => {
+        const userId = randomUserId();
+        const member = createMockAPIMember(userId, [], {
+          hasManageGuild: true,
+        });
+
+        const result = permissionService.isAdmin(member as any);
+        assert.equal(result, true);
+      });
+
+      it("should return true for API member who is guild owner", () => {
+        const userId = randomUserId();
+        const member = createMockAPIMember(userId, []);
+
+        // Pass guildOwnerId matching the member's user ID
+        const result = permissionService.isAdmin(member as any, userId);
+        assert.equal(result, true);
+      });
+
+      it("should return false for API member without admin permissions", () => {
+        const userId = randomUserId();
+        const member = createMockAPIMember(userId, []);
+
+        const result = permissionService.isAdmin(member as any);
+        assert.equal(result, false);
+      });
+
+      it("should return false for API member who is not guild owner", () => {
+        const userId = randomUserId();
+        const member = createMockAPIMember(userId, []);
+
+        // Pass different guildOwnerId
+        const result = permissionService.isAdmin(member as any, "other_owner");
+        assert.equal(result, false);
+      });
+    });
   });
 
   describe("canManageBot", () => {
@@ -690,6 +736,42 @@ describe("permissionService", () => {
 
       const result = permissionService.canManageBot(member as any);
       assert.equal(result, false);
+    });
+
+    describe("APIInteractionGuildMember handling", () => {
+      it("should return true for API member with Administrator permission", () => {
+        const userId = randomUserId();
+        const member = createMockAPIMember(userId, [], { hasAdmin: true });
+
+        const result = permissionService.canManageBot(member as any);
+        assert.equal(result, true);
+      });
+
+      it("should return true for API member with ManageGuild permission", () => {
+        const userId = randomUserId();
+        const member = createMockAPIMember(userId, [], {
+          hasManageGuild: true,
+        });
+
+        const result = permissionService.canManageBot(member as any);
+        assert.equal(result, true);
+      });
+
+      it("should return true for API member who is guild owner", () => {
+        const userId = randomUserId();
+        const member = createMockAPIMember(userId, []);
+
+        const result = permissionService.canManageBot(member as any, userId);
+        assert.equal(result, true);
+      });
+
+      it("should return false for API member without permissions", () => {
+        const userId = randomUserId();
+        const member = createMockAPIMember(userId, []);
+
+        const result = permissionService.canManageBot(member as any);
+        assert.equal(result, false);
+      });
     });
   });
 

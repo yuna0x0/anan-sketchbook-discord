@@ -24,17 +24,19 @@
 
 import {
   SlashCommandBuilder,
+  PermissionFlagsBits,
+  Locale,
+  MessageFlags,
+  Message,
+} from "discord.js";
+import type {
   ChatInputCommandInteraction,
   ButtonInteraction,
   StringSelectMenuInteraction,
   ChannelSelectMenuInteraction,
   RoleSelectMenuInteraction,
   ModalSubmitInteraction,
-  PermissionFlagsBits,
-  Locale,
   InteractionResponse,
-  Message,
-  MessageFlags,
 } from "discord.js";
 import { canManageBot } from "../../services/permissionService.js";
 import {
@@ -136,7 +138,9 @@ export async function execute(
   const guildId = interaction.guildId;
 
   // Check permissions
-  if (!canManageBot(interaction.member as any)) {
+  // Pass guild owner ID for API member type support
+  const guildOwnerId = interaction.guild?.ownerId;
+  if (!canManageBot(interaction.member as any, guildOwnerId)) {
     await interaction.reply({
       content: "❌ " + getSettingsMessage("noPermission", locale),
       flags: MessageFlags.Ephemeral,

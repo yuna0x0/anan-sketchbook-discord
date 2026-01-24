@@ -9,13 +9,15 @@
  */
 
 import {
-  ButtonInteraction,
-  StringSelectMenuInteraction,
   Locale,
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
+} from "discord.js";
+import type {
+  ButtonInteraction,
+  StringSelectMenuInteraction,
 } from "discord.js";
 import {
   setGuildEnabled,

@@ -23,8 +23,8 @@ import {
   Locale,
   channelMention,
   roleMention,
-  Guild,
 } from "discord.js";
+import type { Guild } from "discord.js";
 import { getOrCreateGuildSettings } from "../../../../database/repositories/guildSettings.js";
 import {
   getChannelPermissions,
@@ -113,7 +113,9 @@ export function buildDefaultChannelsPanel(
 
   const embed = new EmbedBuilder()
     .setTitle(getSettingsUIMessage("defaultPermissionsTitle", locale))
-    .setDescription(getSettingsUIMessage("defaultPermissionsDescription", locale))
+    .setDescription(
+      getSettingsUIMessage("defaultPermissionsDescription", locale),
+    )
     .setColor(0x5865f2)
     .addFields(
       {

@@ -24,8 +24,8 @@ import {
   RoleSelectMenuBuilder,
   Locale,
   roleMention,
-  Guild,
 } from "discord.js";
+import type { Guild } from "discord.js";
 import {
   getOrCreateGuildSettings,
   cleanupDeletedDefaultRoles,

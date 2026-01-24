@@ -4,8 +4,10 @@
  * Combines guild settings, channel permissions, command permissions, and rate limits.
  */
 
-import { APIInteractionGuildMember } from "discord-api-types/v10";
-import { GuildMember, Locale } from "discord.js";
+import type { APIInteractionGuildMember } from "discord-api-types/v10";
+import { PermissionFlagsBits } from "discord-api-types/v10";
+import type { GuildMember } from "discord.js";
+import { Locale } from "discord.js";
 import {
   isGuildEnabled,
   canUserUseBot,
@@ -241,29 +243,75 @@ export function checkPermissions(
 }
 
 /**
+ * Checks if a permission bitfield string has a specific permission.
+ * Used for APIInteractionGuildMember which has permissions as a string.
+ */
+function hasPermissionBit(permissions: string, permissionBit: bigint): boolean {
+  try {
+    const permissionsBigInt = BigInt(permissions);
+    return (permissionsBigInt & permissionBit) === permissionBit;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Checks if a user has admin privileges in a guild.
  * Admins can bypass most permission checks and configure bot settings.
  *
+ * Handles both GuildMember (with permissions.has method) and
+ * APIInteractionGuildMember (with permissions as string bitfield).
+ *
  * @param member - The guild member to check
+ * @param guildOwnerId - The guild owner ID (required for API member type)
  */
-export function isAdmin(member: GuildMember | null): boolean {
+export function isAdmin(
+  member: GuildMember | APIInteractionGuildMember | null,
+  guildOwnerId?: string,
+): boolean {
   if (!member) {
     return false;
   }
 
-  // Check if user is the guild owner
-  if (member.guild.ownerId === member.id) {
+  // Get member ID - handles both types
+  const memberId = getMemberId(member);
+
+  // Check if it's a GuildMember with .guild property
+  if ("guild" in member && member.guild && "ownerId" in member.guild) {
+    // GuildMember type
+    if (member.guild.ownerId === memberId) {
+      return true;
+    }
+  } else if (guildOwnerId && memberId === guildOwnerId) {
+    // APIInteractionGuildMember type - use provided guildOwnerId
     return true;
   }
 
-  // Check if user has Administrator permission
-  if (member.permissions.has("Administrator")) {
-    return true;
-  }
-
-  // Check if user has Manage Guild permission
-  if (member.permissions.has("ManageGuild")) {
-    return true;
+  // Check permissions - handle both types
+  // Check type first to avoid using 'in' operator on primitives
+  if (typeof member.permissions === "string") {
+    // APIInteractionGuildMember with permissions as string bitfield
+    if (
+      hasPermissionBit(member.permissions, PermissionFlagsBits.Administrator)
+    ) {
+      return true;
+    }
+    if (hasPermissionBit(member.permissions, PermissionFlagsBits.ManageGuild)) {
+      return true;
+    }
+  } else if (
+    member.permissions &&
+    typeof member.permissions === "object" &&
+    "has" in member.permissions &&
+    typeof member.permissions.has === "function"
+  ) {
+    // GuildMember with Permissions object
+    if (member.permissions.has("Administrator")) {
+      return true;
+    }
+    if (member.permissions.has("ManageGuild")) {
+      return true;
+    }
   }
 
   return false;
@@ -274,9 +322,13 @@ export function isAdmin(member: GuildMember | null): boolean {
  * This is used for the /settings command.
  *
  * @param member - The guild member to check
+ * @param guildOwnerId - The guild owner ID (required for API member type)
  */
-export function canManageBot(member: GuildMember | null): boolean {
-  return isAdmin(member);
+export function canManageBot(
+  member: GuildMember | APIInteractionGuildMember | null,
+  guildOwnerId?: string,
+): boolean {
+  return isAdmin(member, guildOwnerId);
 }
 
 /**

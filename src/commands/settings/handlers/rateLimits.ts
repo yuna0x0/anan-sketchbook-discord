@@ -9,8 +9,6 @@
  */
 
 import {
-  ButtonInteraction,
-  StringSelectMenuInteraction,
   ModalBuilder,
   TextInputBuilder,
   TextInputStyle,
@@ -19,6 +17,10 @@ import {
   ButtonStyle,
   EmbedBuilder,
   Locale,
+} from "discord.js";
+import type {
+  ButtonInteraction,
+  StringSelectMenuInteraction,
 } from "discord.js";
 import {
   setRateLimit,

@@ -201,12 +201,25 @@ export function createMockMember(
 }
 
 /**
+ * Permission flag bits for API member testing.
+ * These match Discord's permission bitfield values.
+ */
+export const API_PERMISSION_FLAGS = {
+  Administrator: 1n << 3n, // 8
+  ManageGuild: 1n << 5n, // 32
+} as const;
+
+/**
  * Creates a mock APIInteractionGuildMember-like object for permission testing.
  * This simulates the raw API response where roles is a string[] instead of a Collection.
  */
 export function createMockAPIMember(
   userId: string,
   roleIds: string[],
+  options: {
+    hasAdmin?: boolean;
+    hasManageGuild?: boolean;
+  } = {},
 ): {
   user: { id: string };
   roles: string[];
@@ -215,10 +228,21 @@ export function createMockAPIMember(
   deaf: boolean;
   mute: boolean;
 } {
+  const { hasAdmin = false, hasManageGuild = false } = options;
+
+  // Calculate permissions bitfield
+  let permissionsBits = 0n;
+  if (hasAdmin) {
+    permissionsBits |= API_PERMISSION_FLAGS.Administrator;
+  }
+  if (hasManageGuild) {
+    permissionsBits |= API_PERMISSION_FLAGS.ManageGuild;
+  }
+
   return {
     user: { id: userId },
     roles: roleIds,
-    permissions: "0",
+    permissions: permissionsBits.toString(),
     joined_at: new Date().toISOString(),
     deaf: false,
     mute: false,

@@ -33,8 +33,8 @@ import {
   ChannelSelectMenuBuilder,
   Locale,
   channelMention,
-  Guild,
 } from "discord.js";
+import type { Guild } from "discord.js";
 import {
   getCommandPermission,
   getCommandChannelPermissions,

@@ -7,12 +7,13 @@
 
 import {
   SlashCommandBuilder,
-  ChatInputCommandInteraction,
   AttachmentBuilder,
   MessageFlags,
   ApplicationIntegrationType,
   InteractionContextType,
+  Locale,
 } from "discord.js";
+import type { ChatInputCommandInteraction } from "discord.js";
 import { FONTS, FontId } from "../config/fonts.js";
 import {
   EmotionTypeValue,
@@ -39,7 +40,6 @@ import {
   resolveLocale,
 } from "../locales/index.js";
 import { getGuildDefaultLanguage } from "../database/repositories/guildSettings.js";
-import { Locale } from "discord.js";
 
 // Build font choices with localizations
 const fontChoices = Object.entries(FONTS).map(([id, info]) => ({

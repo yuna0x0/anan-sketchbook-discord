@@ -12,15 +12,17 @@ import {
   Client,
   Events,
   GatewayIntentBits,
+  Locale,
+  MessageFlags,
+} from "discord.js";
+import type {
   Interaction,
   AutocompleteInteraction,
   ChatInputCommandInteraction,
   ModalSubmitInteraction,
-  Locale,
   GuildMember,
-  MessageFlags,
 } from "discord.js";
-import { APIInteractionGuildMember } from "discord-api-types/v10";
+import type { APIInteractionGuildMember } from "discord-api-types/v10";
 import { config } from "dotenv";
 import { commands } from "./commands/index.js";
 import { getResponseMessage } from "./locales/index.js";
