@@ -152,3 +152,6 @@ data/
 
 # Test data
 test/.test-data/
+
+# Claude Code
+.claude/
