@@ -28,6 +28,7 @@ import { commands } from "./commands/index.js";
 import { getResponseMessage } from "./locales/index.js";
 import { closeDatabase } from "./database/index.js";
 import { initializeDatabase } from "./database/migrate.js";
+import { deleteGuildData } from "./database/repositories/guildSettings.js";
 import {
   checkPermissions,
   getPermissionDeniedMessageForResult,
@@ -251,6 +252,25 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   if (interaction.isModalSubmit()) {
     await handleModalSubmit(interaction);
     return;
+  }
+});
+
+/**
+ * Handle guild delete event (bot removed from server)
+ * Cleans up all guild data from the database when the bot is removed
+ */
+client.on(Events.GuildDelete, (guild) => {
+  console.log(
+    `[${new Date().toISOString()}] Bot removed from guild: ${guild.name} (${guild.id})`,
+  );
+
+  try {
+    deleteGuildData(guild.id);
+    console.log(
+      `[${new Date().toISOString()}] Deleted all data for guild: ${guild.id}`,
+    );
+  } catch (error) {
+    console.error(`Failed to delete data for guild ${guild.id}:`, error);
   }
 });
 

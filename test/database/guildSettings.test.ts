@@ -13,18 +13,27 @@ import {
   closeTestDatabase,
   randomGuildId,
   randomRoleId,
+  randomChannelId,
+  randomUserId,
 } from "../setup.js";
 
 // Import after environment is set up
 let guildSettings: typeof import("../../src/database/repositories/guildSettings.js");
+let channelPermissions: typeof import("../../src/database/repositories/channelPermissions.js");
+let commandPermissions: typeof import("../../src/database/repositories/commandPermissions.js");
+let rateLimits: typeof import("../../src/database/repositories/rateLimits.js");
 
 describe("guildSettings repository", () => {
   before(async () => {
     setupTestEnvironment();
     await createTestDatabase();
-    guildSettings = await import(
-      "../../src/database/repositories/guildSettings.js"
-    );
+    guildSettings =
+      await import("../../src/database/repositories/guildSettings.js");
+    channelPermissions =
+      await import("../../src/database/repositories/channelPermissions.js");
+    commandPermissions =
+      await import("../../src/database/repositories/commandPermissions.js");
+    rateLimits = await import("../../src/database/repositories/rateLimits.js");
   });
 
   after(async () => {
@@ -51,12 +60,12 @@ describe("guildSettings repository", () => {
       assert.equal(
         settings.channel_mode,
         "all",
-        "Should have 'all' channel mode by default"
+        "Should have 'all' channel mode by default",
       );
       assert.equal(
         settings.default_language,
         null,
-        "Should have no default language"
+        "Should have no default language",
       );
       assert.deepEqual(settings.allowed_roles, []);
       assert.deepEqual(settings.denied_roles, []);
@@ -281,7 +290,7 @@ describe("guildSettings repository", () => {
 
         const settings = guildSettings.getGuildSettings(guildId);
         const roleCount = settings!.allowed_roles.filter(
-          (r) => r === roleId
+          (r) => r === roleId,
         ).length;
         assert.equal(roleCount, 1);
       });
@@ -438,7 +447,7 @@ describe("guildSettings repository", () => {
       const existingRoleIds = new Set([existingRole]);
       const removedCount = guildSettings.cleanupDeletedDefaultRoles(
         guildId,
-        existingRoleIds
+        existingRoleIds,
       );
 
       assert.equal(removedCount, 1);
@@ -460,7 +469,7 @@ describe("guildSettings repository", () => {
       const existingRoleIds = new Set([existingAllowed]);
       const removedCount = guildSettings.cleanupDeletedDefaultRoles(
         guildId,
-        existingRoleIds
+        existingRoleIds,
       );
 
       assert.equal(removedCount, 2);
@@ -490,6 +499,368 @@ describe("guildSettings repository", () => {
 
       guildSettings.deleteGuildData(guildId);
 
+      const settings = guildSettings.getGuildSettings(guildId);
+      assert.equal(settings, null);
+    });
+
+    it("should cascade delete channel permissions", () => {
+      const guildId = randomGuildId();
+      const channelId = randomChannelId();
+
+      // Create guild settings and channel permissions
+      guildSettings.getOrCreateGuildSettings(guildId);
+      channelPermissions.addChannelPermission(guildId, channelId, true);
+
+      // Verify channel permission exists
+      const permissionBefore = channelPermissions.getChannelPermission(
+        guildId,
+        channelId,
+      );
+      assert.ok(
+        permissionBefore,
+        "Channel permission should exist before deletion",
+      );
+
+      // Delete guild data
+      guildSettings.deleteGuildData(guildId);
+
+      // Verify channel permission is also deleted
+      const permissionAfter = channelPermissions.getChannelPermission(
+        guildId,
+        channelId,
+      );
+      assert.equal(
+        permissionAfter,
+        null,
+        "Channel permission should be deleted via cascade",
+      );
+    });
+
+    it("should cascade delete command permissions", () => {
+      const guildId = randomGuildId();
+      const commandName = "sketchbook";
+
+      // Create guild settings and command permissions
+      guildSettings.getOrCreateGuildSettings(guildId);
+      commandPermissions.getOrCreateCommandPermission(guildId, commandName);
+      commandPermissions.setCommandEnabled(guildId, commandName, false);
+      commandPermissions.addAllowedRole(guildId, commandName, randomRoleId());
+
+      // Verify command permission exists
+      const permissionBefore = commandPermissions.getCommandPermission(
+        guildId,
+        commandName,
+      );
+      assert.ok(
+        permissionBefore,
+        "Command permission should exist before deletion",
+      );
+      assert.equal(permissionBefore!.enabled, false);
+
+      // Delete guild data
+      guildSettings.deleteGuildData(guildId);
+
+      // Verify command permission is also deleted
+      const permissionAfter = commandPermissions.getCommandPermission(
+        guildId,
+        commandName,
+      );
+      assert.equal(
+        permissionAfter,
+        null,
+        "Command permission should be deleted via cascade",
+      );
+    });
+
+    it("should cascade delete command channel permissions", () => {
+      const guildId = randomGuildId();
+      const commandName = "dialogue";
+      const channelId = randomChannelId();
+
+      // Create guild settings, command permissions, and command channel permissions
+      guildSettings.getOrCreateGuildSettings(guildId);
+      commandPermissions.getOrCreateCommandPermission(guildId, commandName);
+      commandPermissions.addCommandChannelPermission(
+        guildId,
+        commandName,
+        channelId,
+      );
+
+      // Verify command channel permission exists
+      const permissionBefore = commandPermissions.getCommandChannelPermission(
+        guildId,
+        commandName,
+        channelId,
+      );
+      assert.ok(
+        permissionBefore,
+        "Command channel permission should exist before deletion",
+      );
+
+      // Delete guild data
+      guildSettings.deleteGuildData(guildId);
+
+      // Verify command channel permission is also deleted
+      const permissionAfter = commandPermissions.getCommandChannelPermission(
+        guildId,
+        commandName,
+        channelId,
+      );
+      assert.equal(
+        permissionAfter,
+        null,
+        "Command channel permission should be deleted via cascade",
+      );
+    });
+
+    it("should cascade delete rate limit settings", () => {
+      const guildId = randomGuildId();
+      const commandName = "sketchbook";
+
+      // Create guild settings and rate limit settings
+      guildSettings.getOrCreateGuildSettings(guildId);
+      rateLimits.setRateLimit(guildId, null, 5, 60); // Global rate limit
+      rateLimits.setRateLimit(guildId, commandName, 3, 30); // Command rate limit
+
+      // Verify rate limit settings exist
+      const globalLimitBefore = rateLimits.getRateLimitSetting(guildId, null);
+      const commandLimitBefore = rateLimits.getRateLimitSetting(
+        guildId,
+        commandName,
+      );
+      assert.ok(
+        globalLimitBefore,
+        "Global rate limit should exist before deletion",
+      );
+      assert.ok(
+        commandLimitBefore,
+        "Command rate limit should exist before deletion",
+      );
+
+      // Delete guild data
+      guildSettings.deleteGuildData(guildId);
+
+      // Verify rate limit settings are also deleted
+      const globalLimitAfter = rateLimits.getRateLimitSetting(guildId, null);
+      const commandLimitAfter = rateLimits.getRateLimitSetting(
+        guildId,
+        commandName,
+      );
+      assert.equal(
+        globalLimitAfter,
+        null,
+        "Global rate limit should be deleted via cascade",
+      );
+      assert.equal(
+        commandLimitAfter,
+        null,
+        "Command rate limit should be deleted via cascade",
+      );
+    });
+
+    it("should cascade delete rate limit usage", () => {
+      const guildId = randomGuildId();
+      const userId = randomUserId();
+      const commandName = "dialogue";
+
+      // Create guild settings and record some usage
+      guildSettings.getOrCreateGuildSettings(guildId);
+      rateLimits.setRateLimit(guildId, commandName, 5, 60);
+      rateLimits.recordUsage(guildId, userId, commandName);
+      rateLimits.recordUsage(guildId, userId, commandName);
+
+      // Verify usage is recorded
+      const usageCountBefore = rateLimits.getUsageCount(
+        guildId,
+        userId,
+        commandName,
+        60,
+      );
+      assert.equal(
+        usageCountBefore,
+        2,
+        "Usage count should be 2 before deletion",
+      );
+
+      // Delete guild data
+      guildSettings.deleteGuildData(guildId);
+
+      // Verify rate limit usage is also deleted
+      const usageCountAfter = rateLimits.getUsageCount(
+        guildId,
+        userId,
+        commandName,
+        60,
+      );
+      assert.equal(
+        usageCountAfter,
+        0,
+        "Usage count should be 0 after cascade deletion",
+      );
+    });
+
+    it("should cascade delete all related data at once", () => {
+      const guildId = randomGuildId();
+      const channelId1 = randomChannelId();
+      const channelId2 = randomChannelId();
+      const roleId = randomRoleId();
+      const userId = randomUserId();
+
+      // Create comprehensive guild data
+      guildSettings.getOrCreateGuildSettings(guildId);
+      guildSettings.setGuildEnabled(guildId, false);
+      guildSettings.setChannelMode(guildId, "whitelist");
+      guildSettings.setDefaultLanguage(guildId, "ja");
+      guildSettings.addDefaultAllowedRole(guildId, roleId);
+
+      // Add channel permissions
+      channelPermissions.addChannelPermission(guildId, channelId1, true);
+      channelPermissions.addChannelPermission(guildId, channelId2, false);
+
+      // Add command permissions for sketchbook
+      commandPermissions.getOrCreateCommandPermission(guildId, "sketchbook");
+      commandPermissions.setCommandEnabled(guildId, "sketchbook", false);
+      commandPermissions.setCommandChannelMode(
+        guildId,
+        "sketchbook",
+        "blacklist",
+      );
+      commandPermissions.addCommandChannelPermission(
+        guildId,
+        "sketchbook",
+        channelId1,
+      );
+      commandPermissions.addAllowedRole(guildId, "sketchbook", roleId);
+
+      // Add command permissions for dialogue
+      commandPermissions.getOrCreateCommandPermission(guildId, "dialogue");
+      commandPermissions.setCommandChannelMode(
+        guildId,
+        "dialogue",
+        "whitelist",
+      );
+      commandPermissions.addCommandChannelPermission(
+        guildId,
+        "dialogue",
+        channelId2,
+      );
+
+      // Add rate limits
+      rateLimits.setRateLimit(guildId, null, 10, 120);
+      rateLimits.setRateLimit(guildId, "sketchbook", 5, 60);
+      rateLimits.recordUsage(guildId, userId, "sketchbook");
+      rateLimits.recordUsage(guildId, userId, null);
+
+      // Delete all guild data
+      guildSettings.deleteGuildData(guildId);
+
+      // Verify all data is deleted
+      assert.equal(
+        guildSettings.getGuildSettings(guildId),
+        null,
+        "Guild settings should be deleted",
+      );
+      assert.deepEqual(
+        channelPermissions.getChannelPermissions(guildId),
+        [],
+        "Channel permissions should be deleted",
+      );
+      assert.deepEqual(
+        commandPermissions.getGuildCommandPermissions(guildId),
+        [],
+        "Command permissions should be deleted",
+      );
+      assert.deepEqual(
+        commandPermissions.getCommandChannelPermissions(guildId, "sketchbook"),
+        [],
+        "Sketchbook command channels should be deleted",
+      );
+      assert.deepEqual(
+        commandPermissions.getCommandChannelPermissions(guildId, "dialogue"),
+        [],
+        "Dialogue command channels should be deleted",
+      );
+      assert.deepEqual(
+        rateLimits.getGuildRateLimitSettings(guildId),
+        [],
+        "Rate limit settings should be deleted",
+      );
+      assert.equal(
+        rateLimits.getUsageCount(guildId, userId, "sketchbook", 3600),
+        0,
+        "Rate limit usage should be deleted",
+      );
+    });
+
+    it("should not affect other guilds when deleting one guild", () => {
+      const guildId1 = randomGuildId();
+      const guildId2 = randomGuildId();
+      const channelId = randomChannelId();
+      const roleId = randomRoleId();
+
+      // Set up data for both guilds
+      guildSettings.getOrCreateGuildSettings(guildId1);
+      guildSettings.setGuildEnabled(guildId1, false);
+      guildSettings.addDefaultAllowedRole(guildId1, roleId);
+      channelPermissions.addChannelPermission(guildId1, channelId, true);
+      commandPermissions.getOrCreateCommandPermission(guildId1, "sketchbook");
+      rateLimits.setRateLimit(guildId1, null, 5, 60);
+
+      guildSettings.getOrCreateGuildSettings(guildId2);
+      guildSettings.setGuildEnabled(guildId2, false);
+      guildSettings.addDefaultDeniedRole(guildId2, roleId);
+      channelPermissions.addChannelPermission(guildId2, channelId, false);
+      commandPermissions.getOrCreateCommandPermission(guildId2, "dialogue");
+      rateLimits.setRateLimit(guildId2, "dialogue", 3, 30);
+
+      // Delete only guild1
+      guildSettings.deleteGuildData(guildId1);
+
+      // Verify guild1 is deleted
+      assert.equal(
+        guildSettings.getGuildSettings(guildId1),
+        null,
+        "Guild 1 settings should be deleted",
+      );
+
+      // Verify guild2 is intact
+      const guild2Settings = guildSettings.getGuildSettings(guildId2);
+      assert.ok(guild2Settings, "Guild 2 settings should still exist");
+      assert.equal(guild2Settings!.enabled, false);
+      assert.ok(guild2Settings!.denied_roles.includes(roleId));
+
+      const guild2Channels = channelPermissions.getChannelPermissions(guildId2);
+      assert.equal(
+        guild2Channels.length,
+        1,
+        "Guild 2 channels should still exist",
+      );
+
+      const guild2Commands =
+        commandPermissions.getGuildCommandPermissions(guildId2);
+      assert.equal(
+        guild2Commands.length,
+        1,
+        "Guild 2 commands should still exist",
+      );
+
+      const guild2RateLimits = rateLimits.getGuildRateLimitSettings(guildId2);
+      assert.equal(
+        guild2RateLimits.length,
+        1,
+        "Guild 2 rate limits should still exist",
+      );
+    });
+
+    it("should handle deleting non-existent guild gracefully", () => {
+      const guildId = randomGuildId();
+
+      // Should not throw when deleting non-existent guild
+      assert.doesNotThrow(() => {
+        guildSettings.deleteGuildData(guildId);
+      });
+
+      // Verify nothing is affected
       const settings = guildSettings.getGuildSettings(guildId);
       assert.equal(settings, null);
     });
