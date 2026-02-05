@@ -39,24 +39,51 @@ describe("fonts config", () => {
       assert.equal(FONTS.tsukuMinPr6N.name, "TsukuMin Pr6N");
     });
 
+    it("should have notoSansSCBlack font defined", () => {
+      assert.ok(FONTS.notoSansSCBlack, "notoSansSCBlack should be defined");
+      assert.equal(FONTS.notoSansSCBlack.name, "Noto Sans SC Black");
+      assert.ok(FONTS.notoSansSCBlack.file.endsWith(".otf"));
+    });
+
     it("should have notoSerifTCSemiBold font defined", () => {
-      assert.ok(FONTS.notoSerifTCSemiBold, "notoSerifTCSemiBold should be defined");
+      assert.ok(
+        FONTS.notoSerifTCSemiBold,
+        "notoSerifTCSemiBold should be defined",
+      );
       assert.equal(FONTS.notoSerifTCSemiBold.name, "Noto Serif TC SemiBold");
     });
 
+    it("should have notoSerifSCSemiBold font defined", () => {
+      assert.ok(
+        FONTS.notoSerifSCSemiBold,
+        "notoSerifSCSemiBold should be defined",
+      );
+      assert.equal(FONTS.notoSerifSCSemiBold.name, "Noto Serif SC SemiBold");
+      assert.ok(FONTS.notoSerifSCSemiBold.file.endsWith(".otf"));
+    });
+
     it("should have notoSerifKRSemiBold font defined", () => {
-      assert.ok(FONTS.notoSerifKRSemiBold, "notoSerifKRSemiBold should be defined");
+      assert.ok(
+        FONTS.notoSerifKRSemiBold,
+        "notoSerifKRSemiBold should be defined",
+      );
       assert.equal(FONTS.notoSerifKRSemiBold.name, "Noto Serif KR SemiBold");
     });
 
     it("should have notoSerifThaiSemiBold font defined", () => {
-      assert.ok(FONTS.notoSerifThaiSemiBold, "notoSerifThaiSemiBold should be defined");
-      assert.equal(FONTS.notoSerifThaiSemiBold.name, "Noto Serif Thai SemiBold");
+      assert.ok(
+        FONTS.notoSerifThaiSemiBold,
+        "notoSerifThaiSemiBold should be defined",
+      );
+      assert.equal(
+        FONTS.notoSerifThaiSemiBold.name,
+        "Noto Serif Thai SemiBold",
+      );
     });
 
-    it("should have 8 fonts defined", () => {
+    it("should have 10 fonts defined", () => {
       const fontCount = Object.keys(FONTS).length;
-      assert.equal(fontCount, 8, "Should have exactly 8 fonts");
+      assert.equal(fontCount, 10, "Should have exactly 10 fonts");
     });
 
     it("all fonts should have name and file properties", () => {
@@ -65,7 +92,7 @@ describe("fonts config", () => {
         assert.ok(font.file, `Font ${id} should have a file`);
         assert.ok(
           font.file.endsWith(".ttf") || font.file.endsWith(".otf"),
-          `Font ${id} file should be .ttf or .otf`
+          `Font ${id} file should be .ttf or .otf`,
         );
       }
     });
@@ -92,10 +119,12 @@ describe("fonts config", () => {
       const fontIds: FontId[] = [
         "miSans",
         "notoSansTCBlack",
+        "notoSansSCBlack",
         "notoSansKRBlack",
         "notoSansThaiBlack",
         "tsukuMinPr6N",
         "notoSerifTCSemiBold",
+        "notoSerifSCSemiBold",
         "notoSerifKRSemiBold",
         "notoSerifThaiSemiBold",
       ];
@@ -105,7 +134,7 @@ describe("fonts config", () => {
         const font = FONTS[fontId];
         assert.ok(
           fontPath.includes(font.file),
-          `Path for ${fontId} should include ${font.file}`
+          `Path for ${fontId} should include ${font.file}`,
         );
       }
     });
@@ -122,10 +151,12 @@ describe("fonts config", () => {
       const validIds: FontId[] = [
         "miSans",
         "notoSansTCBlack",
+        "notoSansSCBlack",
         "notoSansKRBlack",
         "notoSansThaiBlack",
         "tsukuMinPr6N",
         "notoSerifTCSemiBold",
+        "notoSerifSCSemiBold",
         "notoSerifKRSemiBold",
         "notoSerifThaiSemiBold",
       ];

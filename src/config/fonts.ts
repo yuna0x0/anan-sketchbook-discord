@@ -16,6 +16,10 @@ export const FONTS = {
     name: "Noto Sans TC Black",
     file: "NotoSansTC-Black.otf",
   },
+  notoSansSCBlack: {
+    name: "Noto Sans SC Black",
+    file: "NotoSansSC-Black.otf",
+  },
   notoSansKRBlack: {
     name: "Noto Sans KR Black",
     file: "NotoSansKR-Black.otf",
@@ -31,6 +35,10 @@ export const FONTS = {
   notoSerifTCSemiBold: {
     name: "Noto Serif TC SemiBold",
     file: "NotoSerifTC-SemiBold.otf",
+  },
+  notoSerifSCSemiBold: {
+    name: "Noto Serif SC SemiBold",
+    file: "NotoSerifSC-SemiBold.otf",
   },
   notoSerifKRSemiBold: {
     name: "Noto Serif KR SemiBold",

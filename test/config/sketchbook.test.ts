@@ -85,7 +85,7 @@ describe("sketchbook config", () => {
         assert.equal(
           (ExpressionOption as Record<string, string>)[key],
           value,
-          `ExpressionOption should include ${key}`
+          `ExpressionOption should include ${key}`,
         );
       }
     });
@@ -106,11 +106,11 @@ describe("sketchbook config", () => {
       for (const emotion of emotions) {
         assert.ok(
           EMOTION_IMAGE_MAP[emotion],
-          `Should have mapping for ${emotion}`
+          `Should have mapping for ${emotion}`,
         );
         assert.ok(
           EMOTION_IMAGE_MAP[emotion].endsWith(".png"),
-          `Image for ${emotion} should be PNG`
+          `Image for ${emotion} should be PNG`,
         );
       }
     });
@@ -139,7 +139,7 @@ describe("sketchbook config", () => {
       const validEmotions = Object.values(EmotionType);
       assert.ok(
         validEmotions.includes(emotion),
-        `${emotion} should be a valid emotion`
+        `${emotion} should be a valid emotion`,
       );
     });
 
@@ -152,7 +152,7 @@ describe("sketchbook config", () => {
       // Should get at least 2 different emotions in 100 tries
       assert.ok(
         results.size >= 2,
-        "Should return various emotions over many calls"
+        "Should return various emotions over many calls",
       );
     });
   });
@@ -165,7 +165,7 @@ describe("sketchbook config", () => {
     it("should be a valid font ID", () => {
       assert.ok(
         SKETCHBOOK_DEFAULT_FONT in FONTS,
-        "Default font should exist in FONTS"
+        "Default font should exist in FONTS",
       );
     });
   });
@@ -181,6 +181,10 @@ describe("sketchbook config", () => {
 
     it("should include notoSansTCBlack", () => {
       assert.ok(SKETCHBOOK_FALLBACK_FONTS.includes("notoSansTCBlack"));
+    });
+
+    it("should include notoSansSCBlack", () => {
+      assert.ok(SKETCHBOOK_FALLBACK_FONTS.includes("notoSansSCBlack"));
     });
 
     it("should include notoSansKRBlack", () => {
@@ -215,12 +219,12 @@ describe("sketchbook config", () => {
       assert.ok(
         SKETCHBOOK_CONFIG.textBoxBottomRight.x >
           SKETCHBOOK_CONFIG.textBoxTopLeft.x,
-        "Bottom right X should be greater than top left X"
+        "Bottom right X should be greater than top left X",
       );
       assert.ok(
         SKETCHBOOK_CONFIG.textBoxBottomRight.y >
           SKETCHBOOK_CONFIG.textBoxTopLeft.y,
-        "Bottom right Y should be greater than top left Y"
+        "Bottom right Y should be greater than top left Y",
       );
     });
 
@@ -228,7 +232,7 @@ describe("sketchbook config", () => {
       assert.equal(typeof SKETCHBOOK_CONFIG.maxFontHeight, "number");
       assert.ok(
         SKETCHBOOK_CONFIG.maxFontHeight > 0,
-        "Max font height should be positive"
+        "Max font height should be positive",
       );
     });
 
@@ -236,7 +240,7 @@ describe("sketchbook config", () => {
       assert.equal(typeof SKETCHBOOK_CONFIG.lineSpacing, "number");
       assert.ok(
         SKETCHBOOK_CONFIG.lineSpacing >= 0,
-        "Line spacing should be non-negative"
+        "Line spacing should be non-negative",
       );
     });
 
@@ -263,7 +267,7 @@ describe("sketchbook config", () => {
       assert.equal(typeof SKETCHBOOK_CONFIG.imagePadding, "number");
       assert.ok(
         SKETCHBOOK_CONFIG.imagePadding >= 0,
-        "Image padding should be non-negative"
+        "Image padding should be non-negative",
       );
     });
   });
@@ -305,7 +309,7 @@ describe("sketchbook config", () => {
         assert.ok(imagePath.includes(".png"), `${emotion} path should be PNG`);
         assert.ok(
           imagePath.includes("sketchbook"),
-          `${emotion} path should be in sketchbook`
+          `${emotion} path should be in sketchbook`,
         );
       }
     });
@@ -327,7 +331,7 @@ describe("sketchbook config", () => {
       const fontPath = getSketchbookFontPath();
       assert.ok(
         fontPath.includes(FONTS[SKETCHBOOK_DEFAULT_FONT].file),
-        "Should include default font file"
+        "Should include default font file",
       );
     });
   });
@@ -350,11 +354,11 @@ describe("sketchbook config", () => {
         const fontId = SKETCHBOOK_FALLBACK_FONTS[i];
         assert.ok(
           fontPath.includes("fonts"),
-          `Path for ${fontId} should include fonts directory`
+          `Path for ${fontId} should include fonts directory`,
         );
         assert.ok(
           fontPath.includes(FONTS[fontId].file),
-          `Path for ${fontId} should include font file`
+          `Path for ${fontId} should include font file`,
         );
       }
     });

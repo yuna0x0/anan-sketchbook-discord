@@ -74,6 +74,7 @@ export const SKETCHBOOK_DEFAULT_FONT: FontId = "miSans";
 export const SKETCHBOOK_FALLBACK_FONTS: FontId[] = [
   "miSans",
   "notoSansTCBlack",
+  "notoSansSCBlack",
   "notoSansKRBlack",
   "notoSansThaiBlack",
 ];

@@ -26,6 +26,7 @@ export const DIALOGUE_TEXT_DEFAULT_FONT: FontId = "tsukuMinPr6N";
 export const DIALOGUE_TEXT_FALLBACK_FONTS: FontId[] = [
   "tsukuMinPr6N",
   "notoSerifTCSemiBold",
+  "notoSerifSCSemiBold",
   "notoSerifKRSemiBold",
   "notoSerifThaiSemiBold",
 ];
@@ -33,7 +34,7 @@ export const DIALOGUE_TEXT_FALLBACK_FONTS: FontId[] = [
 // Character name font mapping by Discord locale
 export const CHARACTER_NAME_LOCALE_FONTS: Partial<Record<Locale, FontId>> = {
   [Locale.Japanese]: "tsukuMinPr6N",
-  [Locale.ChineseCN]: "notoSerifTCSemiBold",
+  [Locale.ChineseCN]: "notoSerifSCSemiBold",
   [Locale.ChineseTW]: "notoSerifTCSemiBold",
 };
 

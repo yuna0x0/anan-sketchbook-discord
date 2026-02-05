@@ -24,6 +24,13 @@ export const FONT_NAME_LOCALIZATIONS: Record<string, LocalizationMap> = {
     [Locale.ChineseCN]: "Noto Sans TC Black",
     [Locale.Japanese]: "Noto Sans TC Black",
   },
+  notoSansSCBlack: {
+    [Locale.EnglishUS]: "Noto Sans SC Black",
+    [Locale.EnglishGB]: "Noto Sans SC Black",
+    [Locale.ChineseTW]: "Noto Sans SC Black",
+    [Locale.ChineseCN]: "Noto Sans SC Black",
+    [Locale.Japanese]: "Noto Sans SC Black",
+  },
   notoSansKRBlack: {
     [Locale.EnglishUS]: "Noto Sans KR Black",
     [Locale.EnglishGB]: "Noto Sans KR Black",
@@ -51,6 +58,13 @@ export const FONT_NAME_LOCALIZATIONS: Record<string, LocalizationMap> = {
     [Locale.ChineseTW]: "Noto Serif TC SemiBold",
     [Locale.ChineseCN]: "Noto Serif TC SemiBold",
     [Locale.Japanese]: "Noto Serif TC SemiBold",
+  },
+  notoSerifSCSemiBold: {
+    [Locale.EnglishUS]: "Noto Serif SC SemiBold",
+    [Locale.EnglishGB]: "Noto Serif SC SemiBold",
+    [Locale.ChineseTW]: "Noto Serif SC SemiBold",
+    [Locale.ChineseCN]: "Noto Serif SC SemiBold",
+    [Locale.Japanese]: "Noto Serif SC SemiBold",
   },
   notoSerifKRSemiBold: {
     [Locale.EnglishUS]: "Noto Serif KR SemiBold",
