@@ -61,6 +61,18 @@ export const RESPONSE_MESSAGES = {
     [Locale.Japanese]:
       "画像の生成中にエラーが発生しました。後でもう一度お試しください。",
   } as LocaleRecord,
+  missingPermissions: {
+    [Locale.EnglishUS]:
+      "The bot doesn't have permission to send files in this channel. Here's your image as an ephemeral message instead (only visible to you).",
+    [Locale.EnglishGB]:
+      "The bot doesn't have permission to send files in this channel. Here's your image as an ephemeral message instead (only visible to you).",
+    [Locale.ChineseTW]:
+      "機器人沒有在此頻道傳送檔案的權限。以下是以僅限你可見的訊息傳送的圖片。",
+    [Locale.ChineseCN]:
+      "机器人没有在此频道发送文件的权限。以下是以仅限你可见的消息发送的图片。",
+    [Locale.Japanese]:
+      "このチャンネルでファイルを送信する権限がありません。あなただけに見えるメッセージとして画像を送信します。",
+  } as LocaleRecord,
 } as const;
 
 /**
@@ -96,9 +108,11 @@ export const IMAGE_FORMAT_ERROR_MESSAGES = {
  */
 export function getImageFormatErrorMessage(locale?: Locale | string): string {
   if (locale && locale in IMAGE_FORMAT_ERROR_MESSAGES) {
-    return IMAGE_FORMAT_ERROR_MESSAGES[
-      locale as keyof typeof IMAGE_FORMAT_ERROR_MESSAGES
-    ] ?? IMAGE_FORMAT_ERROR_MESSAGES[Locale.EnglishUS]!;
+    return (
+      IMAGE_FORMAT_ERROR_MESSAGES[
+        locale as keyof typeof IMAGE_FORMAT_ERROR_MESSAGES
+      ] ?? IMAGE_FORMAT_ERROR_MESSAGES[Locale.EnglishUS]!
+    );
   }
   return IMAGE_FORMAT_ERROR_MESSAGES[Locale.EnglishUS]!;
 }

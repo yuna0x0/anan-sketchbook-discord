@@ -16,6 +16,7 @@ import type {
   ChatInputCommandInteraction,
   AutocompleteInteraction,
 } from "discord.js";
+import { editReplyWithFiles } from "../utils/interactionUtils.js";
 import { FontId, FONTS } from "../config/fonts.js";
 import {
   CHARACTERS,
@@ -486,8 +487,8 @@ export async function execute(
         });
       }
     } else {
-      // Send to channel
-      await interaction.editReply({ files: [attachment] });
+      // Send to channel, falling back to ephemeral if missing permissions
+      await editReplyWithFiles(interaction, [attachment], locale);
     }
   } catch (error) {
     console.error("Error generating dialogue image:", error);

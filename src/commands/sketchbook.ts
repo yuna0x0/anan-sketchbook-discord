@@ -14,6 +14,7 @@ import {
   Locale,
 } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
+import { editReplyWithFiles } from "../utils/interactionUtils.js";
 import { FONTS, FontId } from "../config/fonts.js";
 import {
   EmotionTypeValue,
@@ -409,8 +410,8 @@ export async function execute(
         });
       }
     } else {
-      // Send to channel
-      await interaction.editReply({ files: [attachment] });
+      // Send to channel, falling back to ephemeral if missing permissions
+      await editReplyWithFiles(interaction, [attachment], locale);
     }
   } catch (error) {
     console.error("Error generating sketchbook image:", error);
