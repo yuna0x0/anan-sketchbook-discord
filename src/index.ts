@@ -33,6 +33,29 @@ import {
   checkPermissions,
   getPermissionDeniedMessageForResult,
 } from "./services/permissionService.js";
+import { DiscordAPIError, HTTPError } from "discord.js";
+import { RESTJSONErrorCodes } from "discord-api-types/v10";
+
+/**
+ * Check if an error is a transient Discord API error (outage, timeout, expired interaction).
+ * These are not actionable and can be silently ignored in fallback error handlers.
+ */
+function isTransientDiscordError(error: unknown): boolean {
+  if (error instanceof HTTPError && error.status === 503) return true;
+  if (
+    error instanceof DiscordAPIError &&
+    error.code === RESTJSONErrorCodes.UnknownInteraction
+  )
+    return true;
+  if (
+    error instanceof Error &&
+    (error.name === "AbortError" ||
+      error.name === "ConnectTimeoutError" ||
+      ("code" in error && error.code === "UND_ERR_CONNECT_TIMEOUT"))
+  )
+    return true;
+  return false;
+}
 import {
   handleModalSubmit as handleSettingsModalSubmit,
   isSettingsCustomId,
@@ -92,7 +115,9 @@ async function handleAutocomplete(
   try {
     await command.autocomplete(interaction);
   } catch (error) {
-    console.error(`Error handling autocomplete for /${commandName}:`, error);
+    if (!isTransientDiscordError(error)) {
+      console.error(`Error handling autocomplete for /${commandName}:`, error);
+    }
   }
 }
 
@@ -172,7 +197,9 @@ async function handleChatInputCommand(
     );
     await command.execute(interaction);
   } catch (error) {
-    console.error(`Error executing command /${commandName}:`, error);
+    if (!isTransientDiscordError(error)) {
+      console.error(`Error executing command /${commandName}:`, error);
+    }
 
     // Try to respond with a localized error message
     const errorMessage = getResponseMessage("genericError", locale);
@@ -190,7 +217,9 @@ async function handleChatInputCommand(
         });
       }
     } catch (replyError) {
-      console.error("Failed to send error response:", replyError);
+      if (!isTransientDiscordError(replyError)) {
+        console.error("Failed to send error response:", replyError);
+      }
     }
   }
 }
@@ -210,7 +239,9 @@ async function handleModalSubmit(
 
     // Add other modal handlers here as needed
   } catch (error) {
-    console.error("Error handling modal submit:", error);
+    if (!isTransientDiscordError(error)) {
+      console.error("Error handling modal submit:", error);
+    }
     const locale = interaction.locale || Locale.EnglishUS;
     const errorMessage = getResponseMessage("genericError", locale);
 
@@ -227,7 +258,9 @@ async function handleModalSubmit(
         });
       }
     } catch (replyError) {
-      console.error("Failed to send error response:", replyError);
+      if (!isTransientDiscordError(replyError)) {
+        console.error("Failed to send error response:", replyError);
+      }
     }
   }
 }
