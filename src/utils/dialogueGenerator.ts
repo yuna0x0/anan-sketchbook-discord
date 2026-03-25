@@ -281,7 +281,7 @@ function measureTextWidth(
 /**
  * Wrap text into lines that fit within maxWidth
  */
-function wrapText(
+export function wrapText(
   ctx: CanvasRenderingContext2D,
   text: string,
   maxWidth: number,
@@ -305,9 +305,29 @@ function wrapText(
         const testLine = currentLine ? `${currentLine} ${word}` : word;
         const testWidth = measureTextWidth(ctx, testLine, fontSize);
 
-        if (testWidth > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = word;
+        if (testWidth > maxWidth) {
+          if (currentLine) {
+            lines.push(currentLine);
+          }
+          // Check if the word itself exceeds maxWidth and needs character-based wrapping
+          if (measureTextWidth(ctx, word, fontSize) > maxWidth) {
+            let charLine = "";
+            for (const char of word) {
+              const charTest = charLine + char;
+              if (
+                measureTextWidth(ctx, charTest, fontSize) > maxWidth &&
+                charLine
+              ) {
+                lines.push(charLine);
+                charLine = char;
+              } else {
+                charLine = charTest;
+              }
+            }
+            currentLine = charLine;
+          } else {
+            currentLine = word;
+          }
         } else {
           currentLine = testLine;
         }

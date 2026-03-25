@@ -154,4 +154,10 @@ data/
 test/.test-data/
 
 # Claude Code
-.claude/
+.claude/*.local.*
+CLAUDE.local.md
+.claude/agent-memory-local/
+.claude/worktrees/
+
+# Agents files
+.agents/
