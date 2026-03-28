@@ -41,7 +41,8 @@ import { RESTJSONErrorCodes } from "discord-api-types/v10";
  * These are not actionable and can be silently ignored in fallback error handlers.
  */
 function isTransientDiscordError(error: unknown): boolean {
-  if (error instanceof HTTPError && error.status === 503) return true;
+  if (error instanceof HTTPError && (error.status === 500 || error.status === 503))
+    return true;
   if (
     error instanceof DiscordAPIError &&
     error.code === RESTJSONErrorCodes.UnknownInteraction
