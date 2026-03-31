@@ -8,6 +8,27 @@ import { RESTJSONErrorCodes } from "discord-api-types/v10";
 import { getResponseMessage } from "../locales/index.js";
 
 /**
+ * Delete the original deferred reply and send an ephemeral follow-up instead.
+ * This allows error messages to be visible only to the invoking user,
+ * even when the original deferReply was non-ephemeral.
+ */
+export async function replyWithEphemeralError(
+  interaction: ChatInputCommandInteraction,
+  content: string,
+): Promise<void> {
+  try {
+    await interaction.deleteReply();
+  } catch {
+    // Ignore — the deferred reply may already be gone or we may lack permission
+  }
+
+  await interaction.followUp({
+    content,
+    flags: MessageFlags.Ephemeral,
+  });
+}
+
+/**
  * Try to edit the deferred reply with file attachments.
  * If it fails with Missing Permissions (50013), fall back to an ephemeral
  * followUp with the files and a notice, then clean up the original deferred reply.

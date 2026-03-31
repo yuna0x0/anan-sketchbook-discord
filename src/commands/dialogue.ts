@@ -16,7 +16,10 @@ import type {
   ChatInputCommandInteraction,
   AutocompleteInteraction,
 } from "discord.js";
-import { editReplyWithFiles } from "../utils/interactionUtils.js";
+import {
+  editReplyWithFiles,
+  replyWithEphemeralError,
+} from "../utils/interactionUtils.js";
 import { FontId, FONTS } from "../config/fonts.js";
 import {
   CHARACTERS,
@@ -378,11 +381,10 @@ export async function execute(
     // Validate character exists
     const character = CHARACTERS[characterId];
     if (!character) {
-      await interaction.editReply({
-        content: getDialogueMessage("unknownCharacter", locale, {
-          characterId,
-        }),
-      });
+      await replyWithEphemeralError(
+        interaction,
+        getDialogueMessage("unknownCharacter", locale, { characterId }),
+      );
       return;
     }
 
@@ -398,22 +400,22 @@ export async function execute(
     // Convert expression name to number
     const expression = getExpressionNumber(character, finalExpressionId);
     if (expression === undefined) {
-      await interaction.editReply({
-        content: getDialogueMessage("invalidExpression", locale, {
+      await replyWithEphemeralError(
+        interaction,
+        getDialogueMessage("invalidExpression", locale, {
           characterName: getLocalizedCharacterName(characterId, nameLanguage),
           maxExpression: String(character.expressions.length),
         }),
-      });
+      );
       return;
     }
 
     // Validate background ID if provided
     if (backgroundId && !BACKGROUNDS[backgroundId]) {
-      await interaction.editReply({
-        content: getDialogueMessage("unknownBackground", locale, {
-          backgroundId,
-        }),
-      });
+      await replyWithEphemeralError(
+        interaction,
+        getDialogueMessage("unknownBackground", locale, { backgroundId }),
+      );
       return;
     }
 
@@ -422,27 +424,30 @@ export async function execute(
     if (customBackgroundAttachment) {
       // Validate content type
       if (!customBackgroundAttachment.contentType?.startsWith("image/")) {
-        await interaction.editReply({
-          content: getResponseMessage("imageNotSupported", locale),
-        });
+        await replyWithEphemeralError(
+          interaction,
+          getResponseMessage("imageNotSupported", locale),
+        );
         return;
       }
 
       // Fetch the image data
       const response = await fetch(customBackgroundAttachment.url);
       if (!response.ok) {
-        await interaction.editReply({
-          content: getResponseMessage("imageFetchFailed", locale),
-        });
+        await replyWithEphemeralError(
+          interaction,
+          getResponseMessage("imageFetchFailed", locale),
+        );
         return;
       }
       customBackgroundBuffer = Buffer.from(await response.arrayBuffer());
 
       // Validate the actual image format
       if (!isImageSupported(customBackgroundBuffer)) {
-        await interaction.editReply({
-          content: getImageFormatErrorMessage(locale),
-        });
+        await replyWithEphemeralError(
+          interaction,
+          getImageFormatErrorMessage(locale),
+        );
         return;
       }
     }
@@ -492,8 +497,9 @@ export async function execute(
     }
   } catch (error) {
     console.error("Error generating dialogue image:", error);
-    await interaction.editReply({
-      content: getResponseMessage("genericError", locale),
-    });
+    await replyWithEphemeralError(
+      interaction,
+      getResponseMessage("genericError", locale),
+    );
   }
 }

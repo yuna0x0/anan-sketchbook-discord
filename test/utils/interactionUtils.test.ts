@@ -9,7 +9,10 @@ import assert from "node:assert/strict";
 import { MessageFlags } from "discord.js";
 import { DiscordAPIError } from "@discordjs/rest";
 import { RESTJSONErrorCodes } from "discord-api-types/v10";
-import { editReplyWithFiles } from "../../src/utils/interactionUtils.js";
+import {
+  editReplyWithFiles,
+  replyWithEphemeralError,
+} from "../../src/utils/interactionUtils.js";
 import type { AttachmentBuilder, ChatInputCommandInteraction } from "discord.js";
 
 /**
@@ -142,5 +145,47 @@ describe("editReplyWithFiles", () => {
 
     assert.equal(deleteReply.mock.callCount(), 0);
     assert.equal(followUp.mock.callCount(), 0);
+  });
+});
+
+describe("replyWithEphemeralError", () => {
+  const errorMessage = "Something went wrong";
+
+  it("should delete the original reply and send an ephemeral followUp", async () => {
+    const { interaction, deleteReply, followUp } = createMockInteraction();
+    deleteReply.mock.mockImplementation(async () => {});
+    followUp.mock.mockImplementation(async () => ({}));
+
+    await replyWithEphemeralError(interaction, errorMessage);
+
+    assert.equal(deleteReply.mock.callCount(), 1);
+    assert.equal(followUp.mock.callCount(), 1);
+
+    const followUpArgs = followUp.mock.calls[0].arguments[0] as {
+      content: string;
+      flags: number;
+    };
+    assert.equal(followUpArgs.content, errorMessage);
+    assert.equal(followUpArgs.flags, MessageFlags.Ephemeral);
+  });
+
+  it("should still send ephemeral followUp even if deleteReply fails", async () => {
+    const { interaction, deleteReply, followUp } = createMockInteraction();
+    deleteReply.mock.mockImplementation(async () => {
+      throw new Error("Cannot delete");
+    });
+    followUp.mock.mockImplementation(async () => ({}));
+
+    await replyWithEphemeralError(interaction, errorMessage);
+
+    assert.equal(deleteReply.mock.callCount(), 1);
+    assert.equal(followUp.mock.callCount(), 1);
+
+    const followUpArgs = followUp.mock.calls[0].arguments[0] as {
+      content: string;
+      flags: number;
+    };
+    assert.equal(followUpArgs.content, errorMessage);
+    assert.equal(followUpArgs.flags, MessageFlags.Ephemeral);
   });
 });

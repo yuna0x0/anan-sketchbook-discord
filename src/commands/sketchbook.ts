@@ -14,7 +14,10 @@ import {
   Locale,
 } from "discord.js";
 import type { ChatInputCommandInteraction } from "discord.js";
-import { editReplyWithFiles } from "../utils/interactionUtils.js";
+import {
+  editReplyWithFiles,
+  replyWithEphemeralError,
+} from "../utils/interactionUtils.js";
 import { FONTS, FontId } from "../config/fonts.js";
 import {
   EmotionTypeValue,
@@ -340,9 +343,10 @@ export async function execute(
 
     // Validate that at least text or image is provided
     if (!text && !imageAttachment) {
-      await interaction.editReply({
-        content: getSketchbookMessage("noInput", locale),
-      });
+      await replyWithEphemeralError(
+        interaction,
+        getSketchbookMessage("noInput", locale),
+      );
       return;
     }
 
@@ -351,27 +355,30 @@ export async function execute(
     if (imageAttachment) {
       // Basic validation that the attachment claims to be an image
       if (!imageAttachment.contentType?.startsWith("image/")) {
-        await interaction.editReply({
-          content: getResponseMessage("imageNotSupported", locale),
-        });
+        await replyWithEphemeralError(
+          interaction,
+          getResponseMessage("imageNotSupported", locale),
+        );
         return;
       }
 
       // Fetch the image data
       const response = await fetch(imageAttachment.url);
       if (!response.ok) {
-        await interaction.editReply({
-          content: getResponseMessage("imageFetchFailed", locale),
-        });
+        await replyWithEphemeralError(
+          interaction,
+          getResponseMessage("imageFetchFailed", locale),
+        );
         return;
       }
       contentImageBuffer = Buffer.from(await response.arrayBuffer());
 
       // Validate the actual image format from magic bytes
       if (!isImageSupported(contentImageBuffer)) {
-        await interaction.editReply({
-          content: getImageFormatErrorMessage(locale),
-        });
+        await replyWithEphemeralError(
+          interaction,
+          getImageFormatErrorMessage(locale),
+        );
         return;
       }
     }
@@ -415,8 +422,9 @@ export async function execute(
     }
   } catch (error) {
     console.error("Error generating sketchbook image:", error);
-    await interaction.editReply({
-      content: getResponseMessage("genericError", locale),
-    });
+    await replyWithEphemeralError(
+      interaction,
+      getResponseMessage("genericError", locale),
+    );
   }
 }
