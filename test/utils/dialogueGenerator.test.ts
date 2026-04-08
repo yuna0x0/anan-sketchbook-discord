@@ -34,7 +34,7 @@ describe("dialogueGenerator wrapText", () => {
     const ctx = createTestContext(72);
     const maxWidth = 1611; // textAreaEnd.x - textPosition.x (2339 - 728)
     const text =
-      "艾瑪 ，腿環是不【正確的】。所以說，不要再把不【正確的】腿環給其他人看了";
+      "大家好 ，這不是【正確的】。所以說，不要再把不【正確的】東西給其他人看了";
     const lines = wrapText(ctx, text, maxWidth, 72);
 
     // Every line must fit within maxWidth
@@ -119,11 +119,37 @@ describe("dialogueGenerator wrapText", () => {
     }
   });
 
+  it("should not split Discord emoji in CJK text without spaces", () => {
+    const ctx = createTestContext(72);
+    const maxWidth = 1611;
+    const text = "大魔女大人!<:test_emoji:1471054554014416948> 背景測試";
+    const lines = wrapText(ctx, text, maxWidth, 72);
+
+    const joined = lines.join("");
+    assert.ok(
+      joined.includes("<:test_emoji:1471054554014416948>"),
+      `Discord emoji should not be split across lines, got: ${JSON.stringify(lines)}`,
+    );
+  });
+
+  it("should not split Discord emoji in narrow CJK wrapping", () => {
+    const ctx = createTestContext(72);
+    const maxWidth = 400; // narrow to force wrapping
+    const text = "這是測試文字<:test_emoji:123456789012345678>更多文字";
+    const lines = wrapText(ctx, text, maxWidth, 72);
+
+    const joined = lines.join("");
+    assert.ok(
+      joined.includes("<:test_emoji:123456789012345678>"),
+      `Discord emoji should stay intact in narrow CJK wrapping, got: ${JSON.stringify(lines)}`,
+    );
+  });
+
   it("should preserve all text content after wrapping", () => {
     const ctx = createTestContext(72);
     const maxWidth = 1611;
     const text =
-      "艾瑪 ，腿環是不【正確的】。所以說，不要再把不【正確的】腿環給其他人看了";
+      "大家好 ，這不是【正確的】。所以說，不要再把不【正確的】東西給其他人看了";
     const lines = wrapText(ctx, text, maxWidth, 72);
 
     // Joining with space (since original had space-based split) should contain all chars

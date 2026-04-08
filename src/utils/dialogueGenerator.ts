@@ -41,6 +41,7 @@ import {
   loadImageFromPath,
   loadImageFromBuffer,
 } from "./imageUtils.js";
+import { parseColorSegments } from "./textWrapper.js";
 
 // Track registered fonts
 const registeredFonts = new Set<string>();
@@ -213,49 +214,6 @@ function drawCharacterName(
 }
 
 /**
- * Parse text segments for bracket highlighting
- * Returns segments with their colors based on bracket state
- */
-interface TextSegmentWithColor {
-  text: string;
-  isHighlighted: boolean;
-}
-
-function parseTextForHighlighting(text: string): TextSegmentWithColor[] {
-  const segments: TextSegmentWithColor[] = [];
-  let currentText = "";
-  let inBracket = false;
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i];
-
-    if (char === "[" || char === "【") {
-      // Opening bracket
-      if (currentText) {
-        segments.push({ text: currentText, isHighlighted: inBracket });
-        currentText = "";
-      }
-      inBracket = true;
-      currentText += char;
-    } else if (char === "]" || char === "】") {
-      // Closing bracket
-      currentText += char;
-      segments.push({ text: currentText, isHighlighted: true });
-      currentText = "";
-      inBracket = false;
-    } else {
-      currentText += char;
-    }
-  }
-
-  if (currentText) {
-    segments.push({ text: currentText, isHighlighted: inBracket });
-  }
-
-  return segments;
-}
-
-/**
  * Measure text width accounting for emojis
  */
 function measureTextWidth(
@@ -312,16 +270,32 @@ export function wrapText(
           // Check if the word itself exceeds maxWidth and needs character-based wrapping
           if (measureTextWidth(ctx, word, fontSize) > maxWidth) {
             let charLine = "";
-            for (const char of word) {
-              const charTest = charLine + char;
-              if (
-                measureTextWidth(ctx, charTest, fontSize) > maxWidth &&
-                charLine
-              ) {
-                lines.push(charLine);
-                charLine = char;
+            const wordSegments = parseTextWithEmoji(word);
+            for (const seg of wordSegments) {
+              if (seg.type === "text") {
+                for (const char of seg.content) {
+                  const charTest = charLine + char;
+                  if (
+                    measureTextWidth(ctx, charTest, fontSize) > maxWidth &&
+                    charLine
+                  ) {
+                    lines.push(charLine);
+                    charLine = char;
+                  } else {
+                    charLine = charTest;
+                  }
+                }
               } else {
-                charLine = charTest;
+                const charTest = charLine + seg.content;
+                if (
+                  measureTextWidth(ctx, charTest, fontSize) > maxWidth &&
+                  charLine
+                ) {
+                  lines.push(charLine);
+                  charLine = seg.content;
+                } else {
+                  charLine = charTest;
+                }
               }
             }
             currentLine = charLine;
@@ -338,17 +312,35 @@ export function wrapText(
       }
     } else {
       // Character-based wrapping (for CJK text)
+      // Parse emoji segments first so Discord/Unicode emojis stay intact
+      const emojiSegments = parseTextWithEmoji(paragraph);
       let currentLine = "";
 
-      for (const char of paragraph) {
-        const testLine = currentLine + char;
-        const testWidth = measureTextWidth(ctx, testLine, fontSize);
+      for (const segment of emojiSegments) {
+        if (segment.type === "text") {
+          // Wrap text characters individually
+          for (const char of segment.content) {
+            const testLine = currentLine + char;
+            const testWidth = measureTextWidth(ctx, testLine, fontSize);
 
-        if (testWidth > maxWidth && currentLine) {
-          lines.push(currentLine);
-          currentLine = char;
+            if (testWidth > maxWidth && currentLine) {
+              lines.push(currentLine);
+              currentLine = char;
+            } else {
+              currentLine = testLine;
+            }
+          }
         } else {
-          currentLine = testLine;
+          // Keep emoji as a single unit
+          const testLine = currentLine + segment.content;
+          const testWidth = measureTextWidth(ctx, testLine, fontSize);
+
+          if (testWidth > maxWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = segment.content;
+          } else {
+            currentLine = testLine;
+          }
         }
       }
 
@@ -407,31 +399,18 @@ async function drawTextWithEmojis(
       if (segment.type === "text") {
         if (highlightBrackets) {
           // Parse for bracket highlighting within this text segment
-          const colorSegments = parseTextForHighlighting(segment.content);
+          const result = parseColorSegments(
+            segment.content,
+            globalInBracket,
+            highlightColor,
+            defaultColor,
+          );
+          globalInBracket = result.inBracket;
 
-          for (const colorSegment of colorSegments) {
-            // Update bracket state
-            if (
-              colorSegment.text.startsWith("[") ||
-              colorSegment.text.startsWith("【")
-            ) {
-              globalInBracket = true;
-            }
-
-            const color =
-              colorSegment.isHighlighted || globalInBracket
-                ? highlightColor
-                : defaultColor;
-            ctx.fillStyle = rgbToCss(color);
+          for (const colorSegment of result.segments) {
+            ctx.fillStyle = rgbToCss(colorSegment.color);
             ctx.fillText(colorSegment.text, x, y);
             x += ctx.measureText(colorSegment.text).width;
-
-            if (
-              colorSegment.text.endsWith("]") ||
-              colorSegment.text.endsWith("】")
-            ) {
-              globalInBracket = false;
-            }
           }
         } else {
           ctx.fillStyle = rgbToCss(defaultColor);
