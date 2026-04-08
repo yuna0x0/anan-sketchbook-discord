@@ -122,12 +122,12 @@ describe("dialogueGenerator wrapText", () => {
   it("should not split Discord emoji in CJK text without spaces", () => {
     const ctx = createTestContext(72);
     const maxWidth = 1611;
-    const text = "大魔女大人!<:test_emoji:1471054554014416948> 背景測試";
+    const text = "大魔女大人!<:test_emoji:000000000000000000> 背景測試";
     const lines = wrapText(ctx, text, maxWidth, 72);
 
     const joined = lines.join("");
     assert.ok(
-      joined.includes("<:test_emoji:1471054554014416948>"),
+      joined.includes("<:test_emoji:000000000000000000>"),
       `Discord emoji should not be split across lines, got: ${JSON.stringify(lines)}`,
     );
   });
