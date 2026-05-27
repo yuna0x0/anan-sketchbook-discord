@@ -23,6 +23,7 @@ import type {
   GuildMember,
 } from "discord.js";
 import type { APIInteractionGuildMember } from "discord-api-types/v10";
+import DiscordAnalytics from "@discordanalytics/discordjs";
 import { config } from "dotenv";
 import { commands } from "./commands/index.js";
 import { getResponseMessage } from "./locales/index.js";
@@ -74,16 +75,26 @@ if (!token) {
   process.exit(1);
 }
 
+const analyticsToken = process.env.DISCORD_ANALYTICS_TOKEN;
+
 // Create Discord client with necessary intents
 const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
+const analytics = analyticsToken
+  ? new DiscordAnalytics({
+      client,
+      api_key: analyticsToken,
+      sharded: false,
+    })
+  : null;
+
 /**
  * Handle the client ready event
  * This is fired when the bot successfully connects to Discord
  */
-client.once(Events.ClientReady, (readyClient) => {
+client.once(Events.ClientReady, async (readyClient) => {
   console.log("----------------------------------------");
   console.log("Manosaba Discord Bot");
   console.log("----------------------------------------");
@@ -95,6 +106,16 @@ client.once(Events.ClientReady, (readyClient) => {
   console.log("  /sketchbook - Generate sketchbook images");
   console.log("  /dialogue   - Generate dialogue images");
   console.log("  /settings   - Manage bot settings (admin only)");
+  console.log("----------------------------------------");
+  if (analytics) {
+    await analytics.init();
+    analytics.trackEvents();
+    console.log("Discord Analytics: enabled");
+  } else {
+    console.log(
+      "Discord Analytics: disabled (DISCORD_ANALYTICS_TOKEN not set)",
+    );
+  }
   console.log("----------------------------------------");
   console.log("Bot is ready and listening for commands!");
   console.log("");

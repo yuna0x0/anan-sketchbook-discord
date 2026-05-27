@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@discordanalytics/discordjs':
+        specifier: ^2.9.0
+        version: 2.9.0(discord.js@14.25.1)
       '@discordjs/rest':
         specifier: ^2.6.1
         version: 2.6.1
@@ -41,6 +44,14 @@ importers:
         version: 6.0.2
 
 packages:
+
+  '@discordanalytics/core@2.9.0':
+    resolution: {integrity: sha512-Qcac/wMxS2uXSRs3OHfMJRvIbMUyhpx109vjMW6YX7eXZH7AdjmOJTM9uXrd3jhqojz0WKBzBqMQLL/9azdqPg==}
+
+  '@discordanalytics/discordjs@2.9.0':
+    resolution: {integrity: sha512-G1vQMAMWWGhKH2dQn9BhsUgjV+35klhMjk9jWqj/TvfSfksV5ujhvWGeym00lmA/LCaTv8nqYqLEEF/boYHr3w==}
+    peerDependencies:
+      discord.js: 14.x
 
   '@discordjs/builders@1.14.0':
     resolution: {integrity: sha512-7pVKxVWkeLUtrTo9nTYkjRcJk0Hlms6lYervXAD7E7+K5lil9ms2JrEB1TalMiHvQMh7h1HJZ4fCJa0/vHpl4w==}
@@ -641,6 +652,13 @@ packages:
         optional: true
 
 snapshots:
+
+  '@discordanalytics/core@2.9.0': {}
+
+  '@discordanalytics/discordjs@2.9.0(discord.js@14.25.1)':
+    dependencies:
+      '@discordanalytics/core': 2.9.0
+      discord.js: 14.25.1
 
   '@discordjs/builders@1.14.0':
     dependencies:
