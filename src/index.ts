@@ -86,6 +86,7 @@ const analytics = analyticsToken
   ? new DiscordAnalytics({
       client,
       api_key: analyticsToken,
+      api_url: process.env.DISCORD_ANALYTICS_API_URL,
       sharded: false,
     })
   : null;
