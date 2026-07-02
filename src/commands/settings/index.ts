@@ -46,12 +46,7 @@ import {
   getSettingsMessage,
   getSettingsUIMessage,
 } from "../../locales/index.js";
-import {
-  parseCustomId,
-  SESSION_TIMEOUT,
-  PREFIX,
-  isSettingsCustomId,
-} from "./constants.js";
+import { parseCustomId, SESSION_TIMEOUT } from "./constants.js";
 
 // Panel builders
 import {

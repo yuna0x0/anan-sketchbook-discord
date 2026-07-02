@@ -24,7 +24,6 @@ export { EXPRESSION_DISPLAY_NAME_LOCALIZATIONS } from "./expressions.js";
 export {
   ALIGN_CHOICE_LOCALIZATIONS,
   VALIGN_CHOICE_LOCALIZATIONS,
-  WRAP_CHOICE_LOCALIZATIONS,
 } from "./choices.js";
 
 // Re-export fonts from shared location

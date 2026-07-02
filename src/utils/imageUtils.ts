@@ -155,6 +155,108 @@ export function isImageSupported(buffer: Buffer): boolean {
 }
 
 // =============================================================================
+// User Image Fetching (DoS-hardened)
+// =============================================================================
+
+function envNumber(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const value = Number(raw);
+  return Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
+// Reject uploads larger than this before/after download (default 8 MiB).
+// Discord's non-Nitro upload limit is 10 MB, so this is generous for real
+// images while blocking large-payload memory-exhaustion attempts.
+export const MAX_IMAGE_BYTES =
+  envNumber("MAX_IMAGE_UPLOAD_MB", 8) * 1024 * 1024;
+
+// Reject images that decode to more pixels than this (default 16 megapixels),
+// which guards against decompression bombs: a tiny file that expands to a
+// huge bitmap when canvas decodes it (~4 bytes per pixel).
+export const MAX_IMAGE_PIXELS = envNumber("MAX_IMAGE_PIXELS_MP", 16) * 1_000_000;
+
+/** Why a user image was rejected; maps to a localized message at the call site */
+export type ImageFetchError =
+  | "notImage"
+  | "tooLarge"
+  | "fetchFailed"
+  | "unsupported"
+  | "tooManyPixels";
+
+export type ImageFetchResult =
+  | { buffer: Buffer; error?: undefined }
+  | { buffer?: undefined; error: ImageFetchError };
+
+/**
+ * The subset of a Discord attachment this helper needs.
+ * `size`, `width`, and `height` are provided by Discord without downloading.
+ */
+export interface FetchableAttachment {
+  contentType: string | null;
+  size: number;
+  url: string;
+  width?: number | null;
+  height?: number | null;
+}
+
+/**
+ * Fetch and validate a user-supplied image attachment with DoS protections:
+ * byte-size cap (checked before and after download) and pixel-dimension cap
+ * (checked from the header before the full bitmap is ever decoded).
+ */
+export async function fetchUserImage(
+  attachment: FetchableAttachment,
+): Promise<ImageFetchResult> {
+  if (!attachment.contentType?.startsWith("image/")) {
+    return { error: "notImage" };
+  }
+
+  // Cheapest check: Discord reports the size without a download
+  if (attachment.size > MAX_IMAGE_BYTES) {
+    return { error: "tooLarge" };
+  }
+
+  // Reject oversized dimensions before downloading when Discord provides them
+  if (
+    attachment.width &&
+    attachment.height &&
+    attachment.width * attachment.height > MAX_IMAGE_PIXELS
+  ) {
+    return { error: "tooManyPixels" };
+  }
+
+  const response = await fetch(attachment.url);
+  if (!response.ok) {
+    return { error: "fetchFailed" };
+  }
+  const buffer = Buffer.from(await response.arrayBuffer());
+
+  // Defensive: the body may exceed the declared size
+  if (buffer.length > MAX_IMAGE_BYTES) {
+    return { error: "tooLarge" };
+  }
+
+  if (!isImageSupported(buffer)) {
+    return { error: "unsupported" };
+  }
+
+  // Header-only read (no full decode) to catch decompression bombs before
+  // canvas allocates the bitmap
+  try {
+    const metadata = await sharp(buffer).metadata();
+    const pixels = (metadata.width ?? 0) * (metadata.height ?? 0);
+    if (pixels > MAX_IMAGE_PIXELS) {
+      return { error: "tooManyPixels" };
+    }
+  } catch {
+    return { error: "unsupported" };
+  }
+
+  return { buffer };
+}
+
+// =============================================================================
 // Image Loading
 // =============================================================================
 

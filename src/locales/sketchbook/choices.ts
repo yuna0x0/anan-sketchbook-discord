@@ -60,24 +60,3 @@ export const VALIGN_CHOICE_LOCALIZATIONS: Record<string, LocalizationMap> = {
     [Locale.Japanese]: "下",
   },
 };
-
-// =============================================================================
-// Wrap Choice Localizations
-// =============================================================================
-
-export const WRAP_CHOICE_LOCALIZATIONS: Record<string, LocalizationMap> = {
-  greedy: {
-    [Locale.EnglishUS]: "Greedy (faster)",
-    [Locale.EnglishGB]: "Greedy (faster)",
-    [Locale.ChineseTW]: "貪婪演算法（較快）",
-    [Locale.ChineseCN]: "贪婪算法（较快）",
-    [Locale.Japanese]: "グリーディ（高速）",
-  },
-  knuth_plass: {
-    [Locale.EnglishUS]: "Knuth-Plass (better quality)",
-    [Locale.EnglishGB]: "Knuth-Plass (better quality)",
-    [Locale.ChineseTW]: "Knuth-Plass（品質較佳）",
-    [Locale.ChineseCN]: "Knuth-Plass（质量较佳）",
-    [Locale.Japanese]: "Knuth-Plass（高品質）",
-  },
-};

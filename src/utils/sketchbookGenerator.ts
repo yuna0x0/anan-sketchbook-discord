@@ -151,6 +151,7 @@ function findOptimalEmojiOnlyFontSize(
   text: string,
   maxWidth: number,
   maxHeight: number,
+  maxFontSize?: number,
 ): {
   fontSize: number;
   lines: string[];
@@ -160,7 +161,10 @@ function findOptimalEmojiOnlyFontSize(
   const emojiCount = countEmojis(text);
 
   if (emojiCount === 1) {
-    const size = Math.min(maxWidth, maxHeight) * 0.8;
+    let size = Math.min(maxWidth, maxHeight) * 0.8;
+    if (maxFontSize !== undefined) {
+      size = Math.min(size, maxFontSize);
+    }
     return {
       fontSize: size,
       lines: [text.trim()],
@@ -174,7 +178,10 @@ function findOptimalEmojiOnlyFontSize(
   const availableWidth = maxWidth - totalSpacing;
   const sizeByWidth = availableWidth / emojiCount;
   const sizeByHeight = maxHeight * 0.8;
-  const size = Math.min(sizeByWidth, sizeByHeight);
+  let size = Math.min(sizeByWidth, sizeByHeight);
+  if (maxFontSize !== undefined) {
+    size = Math.min(size, maxFontSize);
+  }
 
   return {
     fontSize: size,
@@ -193,6 +200,7 @@ function findOptimalFontSize(
   lineSpacing: number,
   wrapAlgorithm: WrapAlgorithm,
   fontId: FontId,
+  emojiMaxFontSize?: number,
 ): {
   fontSize: number;
   lines: string[];
@@ -200,7 +208,14 @@ function findOptimalFontSize(
   blockHeight: number;
 } {
   if (isEmojiOnlyText(text)) {
-    return findOptimalEmojiOnlyFontSize(text, maxWidth, maxHeight);
+    // Emoji-only content ignores the default cap and renders large;
+    // only an explicitly requested font size limits it
+    return findOptimalEmojiOnlyFontSize(
+      text,
+      maxWidth,
+      maxHeight,
+      emojiMaxFontSize,
+    );
   }
 
   let lo = 1;
@@ -432,7 +447,7 @@ export async function generateTextImage(
     text,
     textColor = SKETCHBOOK_CONFIG.defaultTextColor,
     bracketColor = SKETCHBOOK_CONFIG.bracketTextColor,
-    maxFontHeight = SKETCHBOOK_CONFIG.maxFontHeight,
+    maxFontHeight,
     align = "center",
     valign = "middle",
     lineSpacing = SKETCHBOOK_CONFIG.lineSpacing,
@@ -440,6 +455,8 @@ export async function generateTextImage(
     useOverlay = true,
     fontId = SKETCHBOOK_DEFAULT_FONT,
   } = options;
+  const effectiveMaxFontHeight =
+    maxFontHeight ?? SKETCHBOOK_CONFIG.maxFontHeight;
 
   // Load base image
   const baseImagePath = getEmotionImagePath(emotion);
@@ -465,10 +482,11 @@ export async function generateTextImage(
     text,
     regionWidth,
     regionHeight,
-    maxFontHeight,
+    effectiveMaxFontHeight,
     lineSpacing,
     wrapAlgorithm,
     fontId,
+    maxFontHeight,
   );
 
   // Set final font
@@ -615,7 +633,7 @@ export async function generateCombinedImage(
     contentImage,
     textColor = SKETCHBOOK_CONFIG.defaultTextColor,
     bracketColor = SKETCHBOOK_CONFIG.bracketTextColor,
-    maxFontHeight = SKETCHBOOK_CONFIG.maxFontHeight,
+    maxFontHeight,
     align = "center",
     valign = "middle",
     lineSpacing = SKETCHBOOK_CONFIG.lineSpacing,
@@ -625,6 +643,8 @@ export async function generateCombinedImage(
     useOverlay = true,
     fontId = SKETCHBOOK_DEFAULT_FONT,
   } = options;
+  const effectiveMaxFontHeight =
+    maxFontHeight ?? SKETCHBOOK_CONFIG.maxFontHeight;
 
   // Load base image
   const baseImagePath = getEmotionImagePath(emotion);
@@ -686,10 +706,11 @@ export async function generateCombinedImage(
       text,
       textRegionWidth,
       regionHeight,
-      maxFontHeight,
+      effectiveMaxFontHeight,
       lineSpacing,
       wrapAlgorithm,
       fontId,
+      maxFontHeight,
     );
 
     const fontFamily = getFontFamilyWithFallback(fontId);
@@ -748,10 +769,11 @@ export async function generateCombinedImage(
       text,
       regionWidth,
       textRegionHeight,
-      maxFontHeight,
+      effectiveMaxFontHeight,
       lineSpacing,
       wrapAlgorithm,
       fontId,
+      maxFontHeight,
     );
 
     const fontFamily = getFontFamilyWithFallback(fontId);

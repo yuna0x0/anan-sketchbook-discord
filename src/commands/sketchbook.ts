@@ -3,11 +3,14 @@
  * Allows users to generate sketchbook images with text and/or images.
  * Supports various face expressions and can send to DM or channel.
  * Can be used as a user-installable application anywhere in Discord.
+ *
+ * The slash command keeps only the core options; everything else (font,
+ * font size, layout, overlay, wrapping, filters) is tweaked after generation
+ * through the Adjust/Effects buttons on the resulting message.
  */
 
 import {
   SlashCommandBuilder,
-  AttachmentBuilder,
   MessageFlags,
   ApplicationIntegrationType,
   InteractionContextType,
@@ -18,7 +21,6 @@ import {
   editReplyWithFiles,
   replyWithEphemeralError,
 } from "../utils/interactionUtils.js";
-import { FONTS, FontId } from "../config/fonts.js";
 import {
   EmotionTypeValue,
   ExpressionOption,
@@ -26,33 +28,34 @@ import {
   getRandomEmotion,
   SKETCHBOOK_DEFAULT_FONT,
 } from "../config/sketchbook/index.js";
-import { generateSketchbookImage } from "../utils/sketchbookGenerator.js";
-import { isImageSupported } from "../utils/imageUtils.js";
-import { WrapAlgorithm } from "../utils/textWrapper.js";
+import { fetchUserImage } from "../utils/imageUtils.js";
+import { ImageFilter } from "../utils/imageFilters.js";
 import {
-  getImageFormatErrorMessage,
+  renderGeneration,
+  buildGenerationAttachment,
+  SketchbookParams,
+} from "../services/generationService.js";
+import { adjustSessions } from "../services/adjustSessionStore.js";
+import { buildImageActionsRow } from "../components/actionRow.js";
+import {
+  getImageFetchErrorMessage,
   COMMAND_DESCRIPTION_LOCALIZATIONS,
   OPTION_DESCRIPTION_LOCALIZATIONS,
   EXPRESSION_DISPLAY_NAME_LOCALIZATIONS,
-  ALIGN_CHOICE_LOCALIZATIONS,
-  VALIGN_CHOICE_LOCALIZATIONS,
-  WRAP_CHOICE_LOCALIZATIONS,
-  FONT_NAME_LOCALIZATIONS,
   getResponseMessage,
   getSketchbookMessage,
-  getSketchbookAttachmentDescription,
   resolveLocale,
 } from "../locales/index.js";
 import { getGuildDefaultLanguage } from "../database/repositories/guildSettings.js";
 
-// Build font choices with localizations
-const fontChoices = Object.entries(FONTS).map(([id, info]) => ({
-  name: FONT_NAME_LOCALIZATIONS[id]?.[Locale.EnglishUS] ?? info.name,
-  name_localizations: FONT_NAME_LOCALIZATIONS[id],
-  value: id,
+// Build expression choices with localizations
+const expressionChoices = Object.values(ExpressionOption).map((value) => ({
+  name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[value][Locale.EnglishUS]!,
+  name_localizations: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[value],
+  value,
 }));
 
-// Build the slash command with all options
+// Build the slash command with the core options only
 export const data = new SlashCommandBuilder()
   .setName("sketchbook")
   .setDescription(COMMAND_DESCRIPTION_LOCALIZATIONS[Locale.EnglishUS]!)
@@ -90,162 +93,7 @@ export const data = new SlashCommandBuilder()
       )
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.expression)
       .setRequired(false)
-      .addChoices(
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.NORMAL][
-            Locale.EnglishUS
-          ]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.NORMAL],
-          value: ExpressionOption.NORMAL,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.HAPPY][
-            Locale.EnglishUS
-          ]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.HAPPY],
-          value: ExpressionOption.HAPPY,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.ANGRY][
-            Locale.EnglishUS
-          ]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.ANGRY],
-          value: ExpressionOption.ANGRY,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[
-            ExpressionOption.SPEECHLESS
-          ][Locale.EnglishUS]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SPEECHLESS],
-          value: ExpressionOption.SPEECHLESS,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.BLUSH][
-            Locale.EnglishUS
-          ]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.BLUSH],
-          value: ExpressionOption.BLUSH,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.YANDERE][
-            Locale.EnglishUS
-          ]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.YANDERE],
-          value: ExpressionOption.YANDERE,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[
-            ExpressionOption.CLOSED_EYES
-          ][Locale.EnglishUS]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.CLOSED_EYES],
-          value: ExpressionOption.CLOSED_EYES,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SAD][
-            Locale.EnglishUS
-          ]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SAD],
-          value: ExpressionOption.SAD,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SCARED][
-            Locale.EnglishUS
-          ]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SCARED],
-          value: ExpressionOption.SCARED,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.EXCITED][
-            Locale.EnglishUS
-          ]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.EXCITED],
-          value: ExpressionOption.EXCITED,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[
-            ExpressionOption.SURPRISED
-          ][Locale.EnglishUS]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.SURPRISED],
-          value: ExpressionOption.SURPRISED,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.CRYING][
-            Locale.EnglishUS
-          ]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.CRYING],
-          value: ExpressionOption.CRYING,
-        },
-        {
-          name: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.RANDOM][
-            Locale.EnglishUS
-          ]!,
-          name_localizations:
-            EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[ExpressionOption.RANDOM],
-          value: ExpressionOption.RANDOM,
-        },
-      ),
-  )
-  .addStringOption((option) =>
-    option
-      .setName("align")
-      .setDescription(OPTION_DESCRIPTION_LOCALIZATIONS.align[Locale.EnglishUS]!)
-      .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.align)
-      .setRequired(false)
-      .addChoices(
-        {
-          name: ALIGN_CHOICE_LOCALIZATIONS.left[Locale.EnglishUS]!,
-          name_localizations: ALIGN_CHOICE_LOCALIZATIONS.left,
-          value: "left",
-        },
-        {
-          name: ALIGN_CHOICE_LOCALIZATIONS.center[Locale.EnglishUS]!,
-          name_localizations: ALIGN_CHOICE_LOCALIZATIONS.center,
-          value: "center",
-        },
-        {
-          name: ALIGN_CHOICE_LOCALIZATIONS.right[Locale.EnglishUS]!,
-          name_localizations: ALIGN_CHOICE_LOCALIZATIONS.right,
-          value: "right",
-        },
-      ),
-  )
-  .addStringOption((option) =>
-    option
-      .setName("valign")
-      .setDescription(
-        OPTION_DESCRIPTION_LOCALIZATIONS.valign[Locale.EnglishUS]!,
-      )
-      .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.valign)
-      .setRequired(false)
-      .addChoices(
-        {
-          name: VALIGN_CHOICE_LOCALIZATIONS.top[Locale.EnglishUS]!,
-          name_localizations: VALIGN_CHOICE_LOCALIZATIONS.top,
-          value: "top",
-        },
-        {
-          name: VALIGN_CHOICE_LOCALIZATIONS.middle[Locale.EnglishUS]!,
-          name_localizations: VALIGN_CHOICE_LOCALIZATIONS.middle,
-          value: "middle",
-        },
-        {
-          name: VALIGN_CHOICE_LOCALIZATIONS.bottom[Locale.EnglishUS]!,
-          name_localizations: VALIGN_CHOICE_LOCALIZATIONS.bottom,
-          value: "bottom",
-        },
-      ),
+      .addChoices(...expressionChoices),
   )
   .addBooleanOption((option) =>
     option
@@ -256,39 +104,12 @@ export const data = new SlashCommandBuilder()
   )
   .addBooleanOption((option) =>
     option
-      .setName("overlay")
+      .setName("spoiler")
       .setDescription(
-        OPTION_DESCRIPTION_LOCALIZATIONS.overlay[Locale.EnglishUS]!,
+        OPTION_DESCRIPTION_LOCALIZATIONS.spoiler[Locale.EnglishUS]!,
       )
-      .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.overlay)
+      .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.spoiler)
       .setRequired(false),
-  )
-  .addStringOption((option) =>
-    option
-      .setName("wrap")
-      .setDescription(OPTION_DESCRIPTION_LOCALIZATIONS.wrap[Locale.EnglishUS]!)
-      .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.wrap)
-      .setRequired(false)
-      .addChoices(
-        {
-          name: WRAP_CHOICE_LOCALIZATIONS.greedy[Locale.EnglishUS]!,
-          name_localizations: WRAP_CHOICE_LOCALIZATIONS.greedy,
-          value: "greedy",
-        },
-        {
-          name: WRAP_CHOICE_LOCALIZATIONS.knuth_plass[Locale.EnglishUS]!,
-          name_localizations: WRAP_CHOICE_LOCALIZATIONS.knuth_plass,
-          value: "knuth_plass",
-        },
-      ),
-  )
-  .addStringOption((option) =>
-    option
-      .setName("font")
-      .setDescription(OPTION_DESCRIPTION_LOCALIZATIONS.font[Locale.EnglishUS]!)
-      .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.font)
-      .setRequired(false)
-      .addChoices(...fontChoices),
   );
 
 /**
@@ -327,19 +148,6 @@ export async function execute(
       expressionOption === ExpressionOption.RANDOM
         ? getRandomEmotion()
         : (expressionOption as EmotionTypeValue);
-    const align = (interaction.options.getString("align") ?? "center") as
-      | "left"
-      | "center"
-      | "right";
-    const valign = (interaction.options.getString("valign") ?? "middle") as
-      | "top"
-      | "middle"
-      | "bottom";
-    const useOverlay = interaction.options.getBoolean("overlay") ?? true;
-    const wrapAlgorithm = (interaction.options.getString("wrap") ??
-      "greedy") as WrapAlgorithm;
-    const fontId = (interaction.options.getString("font") ??
-      SKETCHBOOK_DEFAULT_FONT) as FontId;
 
     // Validate that at least text or image is provided
     if (!text && !imageAttachment) {
@@ -350,63 +158,55 @@ export async function execute(
       return;
     }
 
-    // Fetch image buffer if attachment is provided
+    // Fetch image buffer if attachment is provided (size/dimension guarded)
     let contentImageBuffer: Buffer | undefined;
     if (imageAttachment) {
-      // Basic validation that the attachment claims to be an image
-      if (!imageAttachment.contentType?.startsWith("image/")) {
+      const result = await fetchUserImage(imageAttachment);
+      if (result.error) {
         await replyWithEphemeralError(
           interaction,
-          getResponseMessage("imageNotSupported", locale),
+          getImageFetchErrorMessage(result.error, locale),
         );
         return;
       }
-
-      // Fetch the image data
-      const response = await fetch(imageAttachment.url);
-      if (!response.ok) {
-        await replyWithEphemeralError(
-          interaction,
-          getResponseMessage("imageFetchFailed", locale),
-        );
-        return;
-      }
-      contentImageBuffer = Buffer.from(await response.arrayBuffer());
-
-      // Validate the actual image format from magic bytes
-      if (!isImageSupported(contentImageBuffer)) {
-        await replyWithEphemeralError(
-          interaction,
-          getImageFormatErrorMessage(locale),
-        );
-        return;
-      }
+      contentImageBuffer = result.buffer;
     }
 
-    // Generate the sketchbook image
-    const imageBuffer = await generateSketchbookImage({
-      emotion: expression,
+    // Generate the sketchbook image with default advanced settings;
+    // the Adjust/Effects buttons on the message expose the rest
+    const params: SketchbookParams = {
+      command: "sketchbook",
       text: text ?? undefined,
-      contentImage: contentImageBuffer,
-      align,
-      valign,
-      useOverlay,
-      wrapAlgorithm,
-      fontId,
-    });
+      expression,
+      align: "center",
+      valign: "middle",
+      useOverlay: true,
+      wrapAlgorithm: "greedy",
+      fontId: SKETCHBOOK_DEFAULT_FONT,
+      filter: ImageFilter.NONE,
+      spoiler: interaction.options.getBoolean("spoiler") ?? false,
+    };
+    const imageBuffer = await renderGeneration(params, contentImageBuffer);
+    const attachment = buildGenerationAttachment(params, imageBuffer, locale);
+    const actionsRow = buildImageActionsRow(
+      interaction.user.id,
+      interaction.locale,
+    );
 
-    // Create attachment from buffer
-    const attachment = new AttachmentBuilder(imageBuffer, {
-      name: "sketchbook.png",
-      description: getSketchbookAttachmentDescription(text, locale),
-    });
-
-    // Send the result
+    // Send the result and remember the parameters for the Adjust/Effects flow
     if (sendToDM) {
       try {
         // Send to DM
         const dmChannel = await interaction.user.createDM();
-        await dmChannel.send({ files: [attachment] });
+        const message = await dmChannel.send({
+          files: [attachment],
+          components: [actionsRow],
+        });
+        adjustSessions.set(message.id, {
+          userId: interaction.user.id,
+          params,
+          imageBuffer: contentImageBuffer,
+        });
         await interaction.editReply({
           content: getResponseMessage("dmSent", locale),
         });
@@ -418,7 +218,19 @@ export async function execute(
       }
     } else {
       // Send to channel, falling back to ephemeral if missing permissions
-      await editReplyWithFiles(interaction, [attachment], locale);
+      const message = await editReplyWithFiles(
+        interaction,
+        [attachment],
+        locale,
+        [actionsRow],
+      );
+      if (message) {
+        adjustSessions.set(message.id, {
+          userId: interaction.user.id,
+          params,
+          imageBuffer: contentImageBuffer,
+        });
+      }
     }
   } catch (error) {
     console.error("Error generating sketchbook image:", error);

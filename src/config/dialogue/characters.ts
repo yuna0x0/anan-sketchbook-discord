@@ -28,6 +28,12 @@ export interface CharacterInfo {
   expressions: string[];
   themeColor: RGBColor;
   nameConfig: LocalizedNameConfig;
+  /**
+   * Hidden characters are story spoilers: they are excluded from default
+   * character suggestions and only revealed when a search query closely
+   * matches one of their names.
+   */
+  hidden?: boolean;
 }
 
 // All available characters
@@ -481,6 +487,7 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
   },
   yuki: {
     id: "yuki",
+    hidden: true,
     expressions: [
       "yuki_expression_1",
       "yuki_expression_2",
@@ -1328,6 +1335,13 @@ export function getExpressionNames(character: CharacterInfo): string[] {
 
 // Fallback locale when requested locale is not available for a character
 export const FALLBACK_NAME_LOCALE: NameConfigLocale = Locale.Japanese;
+
+// Locales supported for character name rendering in dialogue images
+export const SUPPORTED_NAME_LOCALES: NameConfigLocale[] = [
+  Locale.Japanese,
+  Locale.ChineseTW,
+  Locale.ChineseCN,
+];
 
 // Get name config for a specific locale, falling back to FALLBACK_NAME_LOCALE
 export function getNameConfig(

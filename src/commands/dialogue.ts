@@ -2,11 +2,14 @@
  * Dialogue Slash Command
  * Generates in-game style dialogue images with characters, backgrounds, and styled text.
  * Supports character selection with expressions, custom backgrounds, and bracket highlighting.
+ *
+ * The slash command keeps only the core options; everything else (font,
+ * font size, background fit, highlighting, filters) is tweaked after
+ * generation through the Adjust/Effects buttons on the resulting message.
  */
 
 import {
   SlashCommandBuilder,
-  AttachmentBuilder,
   MessageFlags,
   ApplicationIntegrationType,
   InteractionContextType,
@@ -20,31 +23,31 @@ import {
   editReplyWithFiles,
   replyWithEphemeralError,
 } from "../utils/interactionUtils.js";
-import { FontId, FONTS } from "../config/fonts.js";
 import {
   CHARACTERS,
   CharacterId,
   NameConfigLocale,
   getExpressionNumber,
   FALLBACK_NAME_LOCALE,
+  SUPPORTED_NAME_LOCALES,
 } from "../config/dialogue/characters.js";
-import {
-  StretchMode,
-  STRETCH_MODES,
-  BACKGROUNDS,
-  getBackgroundIds,
-} from "../config/dialogue/backgrounds.js";
+import { BACKGROUNDS, getBackgroundIds } from "../config/dialogue/backgrounds.js";
 import { DIALOGUE_TEXT_DEFAULT_FONT } from "../config/dialogue/index.js";
 import { ExpressionOption } from "../config/sketchbook/index.js";
-import { generateDialogueImage } from "../utils/dialogueGenerator.js";
-import { isImageSupported } from "../utils/imageUtils.js";
+import { fetchUserImage } from "../utils/imageUtils.js";
+import { ImageFilter } from "../utils/imageFilters.js";
 import {
-  getImageFormatErrorMessage,
+  renderGeneration,
+  buildGenerationAttachment,
+  DialogueParams,
+} from "../services/generationService.js";
+import { adjustSessions } from "../services/adjustSessionStore.js";
+import { buildImageActionsRow } from "../components/actionRow.js";
+import { searchCharacters } from "../utils/characterSearch.js";
+import {
+  getImageFetchErrorMessage,
   DIALOGUE_COMMAND_DESCRIPTION_LOCALIZATIONS,
   DIALOGUE_OPTION_LOCALIZATIONS,
-  CHARACTER_NAME_LOCALIZATIONS,
-  STRETCH_MODE_LOCALIZATIONS,
-  FONT_NAME_LOCALIZATIONS,
   getLocalizedBackgroundName,
   getLocalizedCharacterName,
   LANGUAGE_CHOICE_LOCALIZATIONS,
@@ -55,13 +58,6 @@ import {
   resolveLocale,
 } from "../locales/index.js";
 import { getGuildDefaultLanguage } from "../database/repositories/guildSettings.js";
-
-// Supported locales for name display in dialogue (subset of Discord Locale)
-const SUPPORTED_NAME_LOCALES: NameConfigLocale[] = [
-  Locale.Japanese,
-  Locale.ChineseTW,
-  Locale.ChineseCN,
-];
 
 // Check if a Discord locale is supported for name display
 function isSupportedNameLocale(
@@ -77,29 +73,7 @@ const languageChoices = SUPPORTED_NAME_LOCALES.map((locale) => ({
   value: locale,
 }));
 
-// Build character choices with localizations (Discord limit: 25)
-// Use English name as default, with localized names for other locales
-const characterChoices = Object.entries(CHARACTERS).map(([id]) => ({
-  name: CHARACTER_NAME_LOCALIZATIONS[id as CharacterId][Locale.EnglishUS]!,
-  name_localizations: CHARACTER_NAME_LOCALIZATIONS[id as CharacterId],
-  value: id,
-}));
-
-// Build font choices with localizations (use EnglishUS as default name)
-const fontChoices = Object.entries(FONTS).map(([id, info]) => ({
-  name: FONT_NAME_LOCALIZATIONS[id]?.[Locale.EnglishUS] ?? info.name,
-  name_localizations: FONT_NAME_LOCALIZATIONS[id],
-  value: id,
-}));
-
-// Build stretch mode choices with localizations (use EnglishUS as default name)
-const stretchModeChoices = Object.entries(STRETCH_MODES).map(([id, name]) => ({
-  name: STRETCH_MODE_LOCALIZATIONS[id][Locale.EnglishUS] ?? name,
-  name_localizations: STRETCH_MODE_LOCALIZATIONS[id],
-  value: id,
-}));
-
-// Build the slash command
+// Build the slash command with the core options only
 export const data = new SlashCommandBuilder()
   .setName("dialogue")
   .setDescription(DIALOGUE_COMMAND_DESCRIPTION_LOCALIZATIONS[Locale.EnglishUS]!)
@@ -116,6 +90,8 @@ export const data = new SlashCommandBuilder()
     InteractionContextType.PrivateChannel,
   ])
   // Required options
+  // Character uses autocomplete (not static choices) so hidden characters
+  // can be kept out of the default suggestions
   .addStringOption((option) =>
     option
       .setName("character")
@@ -124,7 +100,7 @@ export const data = new SlashCommandBuilder()
       )
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.character)
       .setRequired(true)
-      .addChoices(...characterChoices),
+      .setAutocomplete(true),
   )
   .addStringOption((option) =>
     option
@@ -165,42 +141,6 @@ export const data = new SlashCommandBuilder()
       )
       .setRequired(false),
   )
-  .addStringOption((option) =>
-    option
-      .setName("stretch")
-      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.stretch[Locale.EnglishUS]!)
-      .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.stretch)
-      .setRequired(false)
-      .addChoices(...stretchModeChoices),
-  )
-  .addStringOption((option) =>
-    option
-      .setName("font")
-      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.font[Locale.EnglishUS]!)
-      .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.font)
-      .setRequired(false)
-      .addChoices(...fontChoices),
-  )
-  .addIntegerOption((option) =>
-    option
-      .setName("font_size")
-      .setDescription(
-        DIALOGUE_OPTION_LOCALIZATIONS.font_size[Locale.EnglishUS]!,
-      )
-      .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.font_size)
-      .setRequired(false)
-      .setMinValue(24)
-      .setMaxValue(120),
-  )
-  .addBooleanOption((option) =>
-    option
-      .setName("highlight")
-      .setDescription(
-        DIALOGUE_OPTION_LOCALIZATIONS.highlight[Locale.EnglishUS]!,
-      )
-      .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.highlight)
-      .setRequired(false),
-  )
   .addBooleanOption((option) =>
     option
       .setName("dm")
@@ -215,6 +155,13 @@ export const data = new SlashCommandBuilder()
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.language)
       .setRequired(false)
       .addChoices(...languageChoices),
+  )
+  .addBooleanOption((option) =>
+    option
+      .setName("spoiler")
+      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.spoiler[Locale.EnglishUS]!)
+      .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.spoiler)
+      .setRequired(false),
   );
 
 /**
@@ -226,6 +173,17 @@ export async function autocomplete(
 ): Promise<void> {
   const focusedOption = interaction.options.getFocused(true);
   const userLocale = interaction.locale;
+
+  if (focusedOption.name === "character") {
+    const suggestions = searchCharacters(focusedOption.value, userLocale);
+    await interaction.respond(
+      suggestions.map((suggestion) => ({
+        name: suggestion.displayName,
+        value: suggestion.id,
+      })),
+    );
+    return;
+  }
 
   if (focusedOption.name === "expression") {
     // Get the selected character
@@ -363,13 +321,6 @@ export async function execute(
       interaction.options.getString("background") ?? undefined;
     const customBackgroundAttachment =
       interaction.options.getAttachment("custom_background");
-    const stretchMode = (interaction.options.getString("stretch") ??
-      "zoom_x") as StretchMode;
-    const fontId = (interaction.options.getString("font") ??
-      DIALOGUE_TEXT_DEFAULT_FONT) as FontId;
-    const fontSize = interaction.options.getInteger("font_size") ?? 72;
-    const highlightBrackets =
-      interaction.options.getBoolean("highlight") ?? true;
     const userSpecifiedLanguage = interaction.options.getString(
       "language",
     ) as NameConfigLocale | null;
@@ -397,7 +348,7 @@ export async function execute(
       finalExpressionId = character.expressions[randomIndex];
     }
 
-    // Convert expression name to number
+    // Validate the expression (also converted to a number during rendering)
     const expression = getExpressionNumber(character, finalExpressionId);
     if (expression === undefined) {
       await replyWithEphemeralError(
@@ -419,69 +370,57 @@ export async function execute(
       return;
     }
 
-    // Fetch custom background if provided
+    // Fetch custom background if provided (size/dimension guarded)
     let customBackgroundBuffer: Buffer | undefined;
     if (customBackgroundAttachment) {
-      // Validate content type
-      if (!customBackgroundAttachment.contentType?.startsWith("image/")) {
+      const result = await fetchUserImage(customBackgroundAttachment);
+      if (result.error) {
         await replyWithEphemeralError(
           interaction,
-          getResponseMessage("imageNotSupported", locale),
+          getImageFetchErrorMessage(result.error, locale),
         );
         return;
       }
-
-      // Fetch the image data
-      const response = await fetch(customBackgroundAttachment.url);
-      if (!response.ok) {
-        await replyWithEphemeralError(
-          interaction,
-          getResponseMessage("imageFetchFailed", locale),
-        );
-        return;
-      }
-      customBackgroundBuffer = Buffer.from(await response.arrayBuffer());
-
-      // Validate the actual image format
-      if (!isImageSupported(customBackgroundBuffer)) {
-        await replyWithEphemeralError(
-          interaction,
-          getImageFormatErrorMessage(locale),
-        );
-        return;
-      }
+      customBackgroundBuffer = result.buffer;
     }
 
-    // Generate the dialogue image
-    const imageBuffer = await generateDialogueImage({
+    // Generate the dialogue image with default advanced settings;
+    // the Adjust/Effects buttons on the message expose the rest
+    const params: DialogueParams = {
+      command: "dialogue",
       characterId,
-      expression,
+      expressionId: finalExpressionId,
       text,
       backgroundId: customBackgroundBuffer ? undefined : backgroundId,
-      customBackground: customBackgroundBuffer,
-      stretchMode,
-      fontId,
-      fontSize,
-      highlightBrackets,
+      stretchMode: "zoom_x",
+      fontId: DIALOGUE_TEXT_DEFAULT_FONT,
+      fontSize: 72,
+      highlightBrackets: true,
       nameLocale: nameLanguage,
-    });
-
-    // Create attachment from buffer
-    const localizedCharacterName = getLocalizedCharacterName(
-      characterId,
-      nameLanguage,
+      filter: ImageFilter.NONE,
+      spoiler: interaction.options.getBoolean("spoiler") ?? false,
+    };
+    const imageBuffer = await renderGeneration(params, customBackgroundBuffer);
+    const attachment = buildGenerationAttachment(params, imageBuffer, locale);
+    const actionsRow = buildImageActionsRow(
+      interaction.user.id,
+      interaction.locale,
     );
-    const attachment = new AttachmentBuilder(imageBuffer, {
-      name: "dialogue.png",
-      description: `${localizedCharacterName}: ${text.substring(0, 100)}`,
-    });
 
-    // Send the result
+    // Send the result and remember the parameters for the Adjust/Effects flow
     if (sendToDM) {
       try {
         // Send to DM
         const dmChannel = await interaction.user.createDM();
-        await dmChannel.send({ files: [attachment] });
+        const message = await dmChannel.send({
+          files: [attachment],
+          components: [actionsRow],
+        });
+        adjustSessions.set(message.id, {
+          userId: interaction.user.id,
+          params,
+          imageBuffer: customBackgroundBuffer,
+        });
         await interaction.editReply({
           content: getResponseMessage("dmSent", locale),
         });
@@ -493,7 +432,19 @@ export async function execute(
       }
     } else {
       // Send to channel, falling back to ephemeral if missing permissions
-      await editReplyWithFiles(interaction, [attachment], locale);
+      const message = await editReplyWithFiles(
+        interaction,
+        [attachment],
+        locale,
+        [actionsRow],
+      );
+      if (message) {
+        adjustSessions.set(message.id, {
+          userId: interaction.user.id,
+          params,
+          imageBuffer: customBackgroundBuffer,
+        });
+      }
     }
   } catch (error) {
     console.error("Error generating dialogue image:", error);

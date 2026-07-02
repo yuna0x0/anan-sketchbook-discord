@@ -62,6 +62,24 @@ import {
   handleModalSubmit as handleSettingsModalSubmit,
   isSettingsCustomId,
 } from "./commands/settings/index.js";
+import {
+  handleDeleteButton,
+  isDeleteButtonCustomId,
+} from "./components/deleteButton.js";
+import {
+  isAdjustButtonCustomId,
+  isEffectsButtonCustomId,
+  isAdjustModalCustomId,
+  isEffectsModalCustomId,
+} from "./components/actionRow.js";
+import {
+  handleAdjustButton,
+  handleEffectsButton,
+} from "./components/imageActions.js";
+import {
+  handleAdjustModalSubmit,
+  handleEffectsModalSubmit,
+} from "./components/adjustModals.js";
 
 // Load environment variables from .env file
 config();
@@ -260,7 +278,15 @@ async function handleModalSubmit(
       return;
     }
 
-    // Add other modal handlers here as needed
+    // Adjust/Effects modals on generated image messages
+    if (isAdjustModalCustomId(interaction.customId)) {
+      await handleAdjustModalSubmit(interaction);
+      return;
+    }
+    if (isEffectsModalCustomId(interaction.customId)) {
+      await handleEffectsModalSubmit(interaction);
+      return;
+    }
   } catch (error) {
     if (!isTransientDiscordError(error)) {
       console.error("Error handling modal submit:", error);
@@ -289,7 +315,7 @@ async function handleModalSubmit(
 }
 
 /**
- * Handle interaction events (slash commands, autocomplete, and modals)
+ * Handle interaction events (slash commands, autocomplete, buttons, and modals)
  */
 client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   // Handle autocomplete interactions
@@ -301,6 +327,25 @@ client.on(Events.InteractionCreate, async (interaction: Interaction) => {
   // Handle chat input commands (slash commands)
   if (interaction.isChatInputCommand()) {
     await handleChatInputCommand(interaction);
+    return;
+  }
+
+  // Handle action buttons on generated image messages
+  // (settings buttons are handled by their own message component collector)
+  if (interaction.isButton()) {
+    try {
+      if (isDeleteButtonCustomId(interaction.customId)) {
+        await handleDeleteButton(interaction);
+      } else if (isAdjustButtonCustomId(interaction.customId)) {
+        await handleAdjustButton(interaction);
+      } else if (isEffectsButtonCustomId(interaction.customId)) {
+        await handleEffectsButton(interaction);
+      }
+    } catch (error) {
+      if (!isTransientDiscordError(error)) {
+        console.error("Error handling message action button:", error);
+      }
+    }
     return;
   }
 

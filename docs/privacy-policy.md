@@ -1,6 +1,6 @@
 # Privacy Policy
 
-**Last Updated:** May 27, 2026
+**Last Updated:** July 2, 2026
 
 ## 1. Introduction
 
@@ -58,8 +58,8 @@ Discord Analytics is operated from France and hosts data within the European Uni
 - User profile information beyond Discord User ID for rate limiting
 - Voice data
 - Direct message content
-- Images you upload (processed in memory only, not stored)
-- Text content you provide to commands (processed in memory only, not stored)
+- Images you upload (processed in memory only, never written to disk; retained in memory for up to 24 hours of inactivity solely to power the Adjust/Effects editing buttons, then automatically discarded, and discarded on Bot restart as well)
+- Text content you provide to commands (processed in memory only, never written to disk; retained in memory for up to 24 hours of inactivity solely to power the Adjust/Effects editing buttons, then automatically discarded, and discarded on Bot restart as well)
 - Personalized analytics or telemetry tied to individual users (the Discord Analytics integration described in Section 2.1 transmits only aggregated metrics, never per-user behavior)
 - Location data
 - Device information

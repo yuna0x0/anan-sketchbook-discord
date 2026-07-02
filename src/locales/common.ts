@@ -5,6 +5,7 @@
 
 import { Locale } from "discord.js";
 import { LocaleRecord, getLocalized } from "./types.js";
+import type { ImageFetchError } from "../utils/imageUtils.js";
 
 // =============================================================================
 // Common Response Messages
@@ -51,6 +52,25 @@ export const RESPONSE_MESSAGES = {
     [Locale.ChineseCN]: "无法获取附加的图片。请重试。",
     [Locale.Japanese]: "添付画像の取得に失敗しました。もう一度お試しください。",
   } as LocaleRecord,
+  imageTooLarge: {
+    [Locale.EnglishUS]:
+      "The image is too large. Please use an image under 8 MB.",
+    [Locale.EnglishGB]:
+      "The image is too large. Please use an image under 8 MB.",
+    [Locale.ChineseTW]: "圖片太大。請使用小於 8 MB 的圖片。",
+    [Locale.ChineseCN]: "图片太大。请使用小于 8 MB 的图片。",
+    [Locale.Japanese]: "画像が大きすぎます。8 MB 未満の画像をご使用ください。",
+  } as LocaleRecord,
+  imageTooManyPixels: {
+    [Locale.EnglishUS]:
+      "The image resolution is too high. Please use an image under 16 megapixels.",
+    [Locale.EnglishGB]:
+      "The image resolution is too high. Please use an image under 16 megapixels.",
+    [Locale.ChineseTW]: "圖片解析度過高。請使用低於 1600 萬像素的圖片。",
+    [Locale.ChineseCN]: "图片分辨率过高。请使用低于 1600 万像素的图片。",
+    [Locale.Japanese]:
+      "画像の解像度が高すぎます。1600万画素未満の画像をご使用ください。",
+  } as LocaleRecord,
   genericError: {
     [Locale.EnglishUS]:
       "An error occurred while generating the image. Please try again later.",
@@ -60,6 +80,63 @@ export const RESPONSE_MESSAGES = {
     [Locale.ChineseCN]: "生成图片时发生错误。请稍后再试。",
     [Locale.Japanese]:
       "画像の生成中にエラーが発生しました。後でもう一度お試しください。",
+  } as LocaleRecord,
+  renderTimeout: {
+    [Locale.EnglishUS]:
+      "Image generation took too long. Please try again.",
+    [Locale.EnglishGB]:
+      "Image generation took too long. Please try again.",
+    [Locale.ChineseTW]: "圖片生成逾時，請再試一次。",
+    [Locale.ChineseCN]: "图片生成超时，请再试一次。",
+    [Locale.Japanese]:
+      "画像の生成に時間がかかりすぎました。もう一度お試しください。",
+  } as LocaleRecord,
+  generating: {
+    [Locale.EnglishUS]: "⏳ Generating image…",
+    [Locale.EnglishGB]: "⏳ Generating image…",
+    [Locale.ChineseTW]: "⏳ 圖片生成中…",
+    [Locale.ChineseCN]: "⏳ 图片生成中…",
+    [Locale.Japanese]: "⏳ 画像を生成中…",
+  } as LocaleRecord,
+  actionDenied: {
+    [Locale.EnglishUS]:
+      "Only the person who used the command can use this button.",
+    [Locale.EnglishGB]:
+      "Only the person who used the command can use this button.",
+    [Locale.ChineseTW]: "只有使用指令的人才能使用此按鈕。",
+    [Locale.ChineseCN]: "只有使用指令的人才能使用此按钮。",
+    [Locale.Japanese]:
+      "コマンドを使用した本人のみがこのボタンを使用できます。",
+  } as LocaleRecord,
+  sessionExpired: {
+    [Locale.EnglishUS]:
+      "This editing session has expired. Please run the command again.",
+    [Locale.EnglishGB]:
+      "This editing session has expired. Please run the command again.",
+    [Locale.ChineseTW]: "此編輯工作階段已過期，請重新執行指令。",
+    [Locale.ChineseCN]: "此编辑会话已过期，请重新运行指令。",
+    [Locale.Japanese]:
+      "この編集セッションは期限切れです。もう一度コマンドを実行してください。",
+  } as LocaleRecord,
+  deleteDenied: {
+    [Locale.EnglishUS]:
+      "Only the person who used the command, or a member with the Manage Messages permission, can delete this message.",
+    [Locale.EnglishGB]:
+      "Only the person who used the command, or a member with the Manage Messages permission, can delete this message.",
+    [Locale.ChineseTW]:
+      "只有使用指令的人或擁有「管理訊息」權限的成員才能刪除此訊息。",
+    [Locale.ChineseCN]:
+      "只有使用指令的人或拥有「管理消息」权限的成员才能删除此消息。",
+    [Locale.Japanese]:
+      "コマンドを使用した本人、または「メッセージの管理」権限を持つメンバーのみがこのメッセージを削除できます。",
+  } as LocaleRecord,
+  deleteFailed: {
+    [Locale.EnglishUS]: "Failed to delete the message. Please try again later.",
+    [Locale.EnglishGB]: "Failed to delete the message. Please try again later.",
+    [Locale.ChineseTW]: "無法刪除訊息。請稍後再試。",
+    [Locale.ChineseCN]: "无法删除消息。请稍后再试。",
+    [Locale.Japanese]:
+      "メッセージの削除に失敗しました。後でもう一度お試しください。",
   } as LocaleRecord,
   missingPermissions: {
     [Locale.EnglishUS]:
@@ -115,4 +192,25 @@ export function getImageFormatErrorMessage(locale?: Locale | string): string {
     );
   }
   return IMAGE_FORMAT_ERROR_MESSAGES[Locale.EnglishUS]!;
+}
+
+/**
+ * Map a user-image fetch error to its localized message
+ */
+export function getImageFetchErrorMessage(
+  error: ImageFetchError,
+  locale: string,
+): string {
+  switch (error) {
+    case "notImage":
+      return getResponseMessage("imageNotSupported", locale);
+    case "fetchFailed":
+      return getResponseMessage("imageFetchFailed", locale);
+    case "tooLarge":
+      return getResponseMessage("imageTooLarge", locale);
+    case "tooManyPixels":
+      return getResponseMessage("imageTooManyPixels", locale);
+    case "unsupported":
+      return getImageFormatErrorMessage(locale);
+  }
 }

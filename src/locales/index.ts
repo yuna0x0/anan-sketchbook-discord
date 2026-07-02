@@ -23,6 +23,7 @@ export {
   getResponseMessage,
   IMAGE_FORMAT_ERROR_MESSAGES,
   getImageFormatErrorMessage,
+  getImageFetchErrorMessage,
 } from "./common.js";
 
 // Re-export shared fonts
@@ -39,7 +40,6 @@ export {
   EXPRESSION_DISPLAY_NAME_LOCALIZATIONS,
   ALIGN_CHOICE_LOCALIZATIONS,
   VALIGN_CHOICE_LOCALIZATIONS,
-  WRAP_CHOICE_LOCALIZATIONS,
 } from "./sketchbook/index.js";
 
 // Re-export dialogue localizations
@@ -78,3 +78,15 @@ export {
   PERMISSION_DENIED_MESSAGES,
   getPermissionDeniedMessage,
 } from "./permissions.js";
+
+// Re-export adjust/effects UI localizations
+export {
+  ADJUST_UI_LABELS,
+  type AdjustUILabelKey,
+  getAdjustUILabel,
+  FILTER_NAME_LOCALIZATIONS,
+  getFilterName,
+  getDefaultValueLabel,
+  getFineTuneHelpMessage,
+  getFineTuneInvalidMessage,
+} from "./adjust.js";

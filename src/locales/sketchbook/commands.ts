@@ -44,20 +44,6 @@ export const OPTION_DESCRIPTION_LOCALIZATIONS: Record<string, LocalizationMap> =
       [Locale.ChineseCN]: "安安的表情",
       [Locale.Japanese]: "アンアンの表情",
     },
-    align: {
-      [Locale.EnglishUS]: "Horizontal text alignment",
-      [Locale.EnglishGB]: "Horizontal text alignment",
-      [Locale.ChineseTW]: "文字水平對齊方式",
-      [Locale.ChineseCN]: "文字水平对齐方式",
-      [Locale.Japanese]: "テキストの水平配置",
-    },
-    valign: {
-      [Locale.EnglishUS]: "Vertical text alignment",
-      [Locale.EnglishGB]: "Vertical text alignment",
-      [Locale.ChineseTW]: "文字垂直對齊方式",
-      [Locale.ChineseCN]: "文字垂直对齐方式",
-      [Locale.Japanese]: "テキストの垂直配置",
-    },
     dm: {
       [Locale.EnglishUS]: "Send the result to your DMs instead of the channel",
       [Locale.EnglishGB]: "Send the result to your DMs instead of the channel",
@@ -65,25 +51,11 @@ export const OPTION_DESCRIPTION_LOCALIZATIONS: Record<string, LocalizationMap> =
       [Locale.ChineseCN]: "将结果发送到私信而不是频道",
       [Locale.Japanese]: "結果をチャンネルではなくDMに送信する",
     },
-    overlay: {
-      [Locale.EnglishUS]: "Apply the overlay effect (default: True)",
-      [Locale.EnglishGB]: "Apply the overlay effect (default: True)",
-      [Locale.ChineseTW]: "套用疊加效果 (預設: True)",
-      [Locale.ChineseCN]: "应用叠加效果 (默认: True)",
-      [Locale.Japanese]: "オーバーレイ効果を適用する (デフォルト: True)",
-    },
-    wrap: {
-      [Locale.EnglishUS]: "Text wrapping algorithm",
-      [Locale.EnglishGB]: "Text wrapping algorithm",
-      [Locale.ChineseTW]: "文字換行演算法",
-      [Locale.ChineseCN]: "文字换行算法",
-      [Locale.Japanese]: "テキスト折り返しアルゴリズム",
-    },
-    font: {
-      [Locale.EnglishUS]: "Font for the text",
-      [Locale.EnglishGB]: "Font for the text",
-      [Locale.ChineseTW]: "文字的字體",
-      [Locale.ChineseCN]: "文字的字体",
-      [Locale.Japanese]: "テキストのフォント",
+    spoiler: {
+      [Locale.EnglishUS]: "Mark the generated image as a spoiler (default: False)",
+      [Locale.EnglishGB]: "Mark the generated image as a spoiler (default: False)",
+      [Locale.ChineseTW]: "將生成的圖片標記為劇透 (預設: False)",
+      [Locale.ChineseCN]: "将生成的图片标记为剧透 (默认: False)",
+      [Locale.Japanese]: "生成画像をネタバレとしてマークする (デフォルト: False)",
     },
   };

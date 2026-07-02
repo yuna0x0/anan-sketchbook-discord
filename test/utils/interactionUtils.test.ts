@@ -65,6 +65,43 @@ describe("editReplyWithFiles", () => {
     assert.equal(followUp.mock.callCount(), 0);
   });
 
+  it("should pass components through to editReply when provided", async () => {
+    const { interaction, editReply } = createMockInteraction();
+    editReply.mock.mockImplementation(async () => ({}));
+    const fakeComponents = [{ type: 1 }] as unknown as Parameters<
+      typeof editReplyWithFiles
+    >[3];
+
+    await editReplyWithFiles(interaction, fakeFiles, locale, fakeComponents);
+
+    assert.equal(editReply.mock.callCount(), 1);
+    assert.deepEqual(editReply.mock.calls[0].arguments[0], {
+      files: fakeFiles,
+      components: fakeComponents,
+    });
+  });
+
+  it("should not attach components to the ephemeral fallback", async () => {
+    const { interaction, editReply, deleteReply, followUp } =
+      createMockInteraction();
+    editReply.mock.mockImplementation(async () => {
+      throw createDiscordAPIError(RESTJSONErrorCodes.MissingPermissions);
+    });
+    deleteReply.mock.mockImplementation(async () => {});
+    followUp.mock.mockImplementation(async () => ({}));
+    const fakeComponents = [{ type: 1 }] as unknown as Parameters<
+      typeof editReplyWithFiles
+    >[3];
+
+    await editReplyWithFiles(interaction, fakeFiles, locale, fakeComponents);
+
+    assert.equal(followUp.mock.callCount(), 1);
+    const followUpArgs = followUp.mock.calls[0].arguments[0] as {
+      components?: unknown;
+    };
+    assert.equal(followUpArgs.components, undefined);
+  });
+
   it("should fall back to ephemeral followUp on MissingPermissions error", async () => {
     const { interaction, editReply, deleteReply, followUp } =
       createMockInteraction();

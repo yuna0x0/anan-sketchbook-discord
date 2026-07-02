@@ -1,7 +1,10 @@
 import { MessageFlags } from "discord.js";
 import type {
+  ActionRowBuilder,
   AttachmentBuilder,
   ChatInputCommandInteraction,
+  Message,
+  MessageActionRowComponentBuilder,
 } from "discord.js";
 import { DiscordAPIError } from "@discordjs/rest";
 import { RESTJSONErrorCodes } from "discord-api-types/v10";
@@ -19,7 +22,7 @@ export async function replyWithEphemeralError(
   try {
     await interaction.deleteReply();
   } catch {
-    // Ignore — the deferred reply may already be gone or we may lack permission
+    // Ignore: the deferred reply may already be gone or we may lack permission
   }
 
   await interaction.followUp({
@@ -32,14 +35,20 @@ export async function replyWithEphemeralError(
  * Try to edit the deferred reply with file attachments.
  * If it fails with Missing Permissions (50013), fall back to an ephemeral
  * followUp with the files and a notice, then clean up the original deferred reply.
+ * Components are only attached to the public reply, not the ephemeral fallback
+ * (ephemeral messages can be dismissed natively).
+ * Returns the public message, or null when it fell back to the ephemeral path.
  */
 export async function editReplyWithFiles(
   interaction: ChatInputCommandInteraction,
   files: AttachmentBuilder[],
   locale: string,
-): Promise<void> {
+  components?: ActionRowBuilder<MessageActionRowComponentBuilder>[],
+): Promise<Message | null> {
   try {
-    await interaction.editReply({ files });
+    return await interaction.editReply(
+      components ? { files, components } : { files },
+    );
   } catch (error) {
     if (
       !(error instanceof DiscordAPIError) ||
@@ -52,7 +61,7 @@ export async function editReplyWithFiles(
     try {
       await interaction.deleteReply();
     } catch {
-      // Ignore — the deferred reply may already be gone or we may lack permission
+      // Ignore: the deferred reply may already be gone or we may lack permission
     }
 
     // Fall back to an ephemeral followUp with a notice
@@ -61,5 +70,6 @@ export async function editReplyWithFiles(
       files,
       flags: MessageFlags.Ephemeral,
     });
+    return null;
   }
 }
