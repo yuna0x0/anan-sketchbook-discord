@@ -50,18 +50,10 @@ import {
   getRandomEmotion,
   SKETCHBOOK_DEFAULT_FONT,
 } from "../config/sketchbook/index.js";
-import { DIALOGUE_TEXT_DEFAULT_FONT } from "../config/dialogue/index.js";
-import {
-  CHARACTERS,
-  getExpressionNumber,
-  NameConfigLocale,
-  SUPPORTED_NAME_LOCALES,
-} from "../config/dialogue/characters.js";
-import {
-  STRETCH_MODES,
-  StretchMode,
-  BACKGROUNDS,
-} from "../config/dialogue/backgrounds.js";
+import { getGame } from "../config/games/index.js";
+import { getExpressionNumber } from "../config/games/helpers.js";
+import type { NameConfigLocale } from "../config/games/types.js";
+import { STRETCH_MODES, StretchMode } from "../config/dialogue/index.js";
 import {
   ImageFilter,
   ImageFilterId,
@@ -463,7 +455,8 @@ function buildDialogueAdjustModal(
 
   // Expressions of the current character (modal selects have no autocomplete);
   // capped to Discord's 25-option limit with the current one always included
-  const character = CHARACTERS[params.characterId];
+  const game = getGame(params.gameId);
+  const character = game.characters[params.characterId];
   const expressionIds = character.expressions.slice(0, 24);
   if (
     !expressionIds.includes(params.expressionId) &&
@@ -474,11 +467,13 @@ function buildDialogueAdjustModal(
   const expressionSelect = new StringSelectMenuBuilder()
     .setCustomId(FIELD.EXPRESSION)
     .setRequired(false)
-    .setPlaceholder(getLocalizedExpressionName(params.expressionId, locale))
+    .setPlaceholder(
+      getLocalizedExpressionName(params.gameId, params.expressionId, locale),
+    )
     .addOptions(
       expressionIds.map((id) =>
         new StringSelectMenuOptionBuilder()
-          .setLabel(getLocalizedExpressionName(id, locale))
+          .setLabel(getLocalizedExpressionName(params.gameId, id, locale))
           .setValue(id)
           .setDefault(id === params.expressionId),
       ),
@@ -503,7 +498,9 @@ function buildDialogueAdjustModal(
     .setValue(String(params.fontSize));
   const fontSizeLabel = new LabelBuilder()
     .setLabel(getAdjustUILabel("fontSizeLabel", locale))
-    .setDescription(getDefaultValueLabel(locale, "72"))
+    .setDescription(
+      getDefaultValueLabel(locale, String(game.layout.defaultFontSize)),
+    )
     .setTextInputComponent(fontSizeInput);
 
   const currentLanguageName = pickLocalized(
@@ -516,7 +513,7 @@ function buildDialogueAdjustModal(
     .setRequired(false)
     .setPlaceholder(currentLanguageName)
     .addOptions(
-      SUPPORTED_NAME_LOCALES.map((nameLocale) =>
+      game.supportedNameLocales.map((nameLocale) =>
         new StringSelectMenuOptionBuilder()
           .setLabel(
             pickLocalized(
@@ -539,7 +536,7 @@ function buildDialogueAdjustModal(
     .addLabelComponents(
       textLabel,
       expressionLabel,
-      buildFontSelect(params.fontId, DIALOGUE_TEXT_DEFAULT_FONT, locale),
+      buildFontSelect(params.fontId, game.fonts.textDefaultFont, locale),
       fontSizeLabel,
       languageLabel,
     );
@@ -893,7 +890,8 @@ export async function handleAdjustModalSubmit(
   }
 
   const params = { ...session.params };
-  const character = CHARACTERS[params.characterId];
+  const game = getGame(params.gameId);
+  const character = game.characters[params.characterId];
 
   const text = fields.getTextInputValue(FIELD.TEXT).trim();
   if (text) {
@@ -933,7 +931,7 @@ export async function handleAdjustModalSubmit(
   const languageValue = fields.getStringSelectValues(FIELD.LANGUAGE)[0];
   if (
     languageValue &&
-    SUPPORTED_NAME_LOCALES.includes(languageValue as NameConfigLocale)
+    game.supportedNameLocales.includes(languageValue as NameConfigLocale)
   ) {
     params.nameLocale = languageValue as NameConfigLocale;
   }
@@ -1021,7 +1019,7 @@ export async function handleEffectsModalSubmit(
   let newImageBuffer: Buffer | null | undefined;
   const backgroundRaw = fields.getTextInputValue(FIELD.BACKGROUND).trim();
   if (backgroundRaw && backgroundRaw !== params.backgroundId) {
-    if (!BACKGROUNDS[backgroundRaw]) {
+    if (!getGame(params.gameId).backgrounds[backgroundRaw]) {
       await interaction.reply({
         content: getDialogueMessage("unknownBackground", interaction.locale, {
           backgroundId: backgroundRaw,

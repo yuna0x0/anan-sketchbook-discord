@@ -11,7 +11,7 @@ import type {
   SketchbookParams,
   DialogueParams,
 } from "../../src/services/generationService.js";
-import { CHARACTERS, CharacterId } from "../../src/config/dialogue/characters.js";
+import { GAMES } from "../../src/config/games/index.js";
 
 const BUFFER = Buffer.from("fake-image");
 
@@ -31,11 +31,12 @@ function sketchbookParams(spoiler?: boolean): SketchbookParams {
 }
 
 function dialogueParams(spoiler?: boolean): DialogueParams {
-  const characterId = Object.keys(CHARACTERS)[0] as CharacterId;
+  const characterId = Object.keys(GAMES.manosaba.characters)[0];
   return {
     command: "dialogue",
+    gameId: "manosaba",
     characterId,
-    expressionId: CHARACTERS[characterId].expressions[0],
+    expressionId: GAMES.manosaba.characters[characterId].expressions[0],
     text: "Hello there",
     stretchMode: "zoom_x",
     fontId: "miSans",

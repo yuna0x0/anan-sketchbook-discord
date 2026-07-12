@@ -86,14 +86,17 @@ docker compose down
 
 | Option | Required | Description |
 |--------|----------|-------------|
-| `character` | Yes | Character to display (autocomplete) |
+| `character` | Yes | Character to display (autocomplete, scoped to the selected game) |
 | `expression` | Yes | Expression ID (autocomplete, supports Random) |
 | `text` | Yes | Dialogue text |
-| `background` | No | Background image ID (autocomplete) |
+| `game` | No | Game to use characters and backgrounds from (default: Magical Girl Witch Trials) |
+| `background` | No | Background image ID (autocomplete, scoped to the selected game) |
 | `custom_background` | No | Upload custom background |
 | `dm` | No | Send to DMs |
-| `language` | No | Character name language (auto-detects from Discord locale, fallback: Japanese) |
+| `language` | No | Character name language (auto-detects from Discord locale, fallback per game) |
 | `spoiler` | No | Mark the image as a spoiler (default: false) |
+
+The dialogue system supports multiple games: each game contributes its own characters, backgrounds, dialogue box layout, and localizations. See [docs/adding-a-game.md](docs/adding-a-game.md) for how to add a new game.
 
 ### Adjust & Effects (after generation)
 

@@ -21,13 +21,10 @@ import type { HAlign, VAlign } from "../utils/sketchbookGenerator.js";
 import type { WrapAlgorithm } from "../utils/textWrapper.js";
 import type { FontId } from "../config/fonts.js";
 import type { EmotionTypeValue } from "../config/sketchbook/index.js";
-import {
-  CHARACTERS,
-  CharacterId,
-  NameConfigLocale,
-  getExpressionNumber,
-} from "../config/dialogue/characters.js";
-import type { StretchMode } from "../config/dialogue/backgrounds.js";
+import type { NameConfigLocale } from "../config/games/types.js";
+import { getGame, type GameId } from "../config/games/index.js";
+import { getCharacter, getExpressionNumber } from "../config/games/helpers.js";
+import type { StretchMode } from "../config/dialogue/index.js";
 import {
   getSketchbookAttachmentDescription,
   getLocalizedCharacterName,
@@ -56,7 +53,8 @@ export interface SketchbookParams {
 
 export interface DialogueParams {
   command: "dialogue";
-  characterId: CharacterId;
+  gameId: GameId;
+  characterId: string;
   /** Resolved expression ID (random is resolved before storing) */
   expressionId: string;
   text: string;
@@ -101,9 +99,12 @@ export async function renderGeneration(
     return applyPostProcessing(base, params);
   }
 
-  const character = CHARACTERS[params.characterId];
+  const game = getGame(params.gameId);
+  const character = getCharacter(game, params.characterId);
   if (!character) {
-    throw new Error(`Unknown character: ${params.characterId}`);
+    throw new Error(
+      `Unknown character for game ${game.id}: ${params.characterId}`,
+    );
   }
   const expression = getExpressionNumber(character, params.expressionId);
   if (expression === undefined) {
@@ -113,6 +114,7 @@ export async function renderGeneration(
   }
 
   const base = await generateDialogueImage({
+    game,
     characterId: params.characterId,
     expression,
     text: params.text,
@@ -169,6 +171,7 @@ export function buildGenerationAttachment(
   }
 
   const characterName = getLocalizedCharacterName(
+    params.gameId,
     params.characterId,
     params.nameLocale,
   );

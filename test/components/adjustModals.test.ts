@@ -18,7 +18,7 @@ import {
   isEffectsButtonCustomId,
 } from "../../src/components/actionRow.js";
 import type { AdjustSession } from "../../src/services/adjustSessionStore.js";
-import { CHARACTERS, CharacterId } from "../../src/config/dialogue/characters.js";
+import { GAMES } from "../../src/config/games/index.js";
 
 // Placeholder Discord snowflake ID (not a real ID)
 const USER_ID = "111111111111111111";
@@ -42,13 +42,14 @@ function sketchbookSession(withImage = false): AdjustSession {
 }
 
 function dialogueSession(): AdjustSession {
-  const characterId = Object.keys(CHARACTERS)[0] as CharacterId;
+  const characterId = Object.keys(GAMES.manosaba.characters)[0];
   return {
     userId: USER_ID,
     params: {
       command: "dialogue",
+      gameId: "manosaba",
       characterId,
-      expressionId: CHARACTERS[characterId].expressions[0],
+      expressionId: GAMES.manosaba.characters[characterId].expressions[0],
       text: "Hello there",
       stretchMode: "zoom_x",
       fontId: "miSans",

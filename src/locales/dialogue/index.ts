@@ -12,11 +12,8 @@ export {
 // Re-export messages and helper
 export { DIALOGUE_MESSAGES, getDialogueMessage } from "./messages.js";
 
-// Re-export character localizations and helper
-export {
-  CHARACTER_NAME_LOCALIZATIONS,
-  getLocalizedCharacterName,
-} from "./characters.js";
+// Re-export character name helper
+export { getLocalizedCharacterName } from "./characters.js";
 
 // Re-export choice localizations
 export {
@@ -24,17 +21,14 @@ export {
   STRETCH_MODE_LOCALIZATIONS,
 } from "./choices.js";
 
-// Re-export background localizations and helper
-export {
-  BACKGROUND_NAME_LOCALIZATIONS,
-  getLocalizedBackgroundName,
-} from "./backgrounds.js";
+// Re-export background name helper
+export { getLocalizedBackgroundName } from "./backgrounds.js";
 
-// Re-export character expression localizations and helper
-export {
-  CHARACTER_EXPRESSION_LOCALIZATIONS,
-  getLocalizedExpressionName,
-} from "./expressions.js";
+// Re-export character expression name helper
+export { getLocalizedExpressionName } from "./expressions.js";
+
+// Re-export game name helper
+export { getLocalizedGameName } from "./games.js";
 
 // Re-export fonts from shared location
 export { FONT_NAME_LOCALIZATIONS } from "../fonts.js";

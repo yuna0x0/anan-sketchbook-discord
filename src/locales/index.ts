@@ -50,12 +50,10 @@ export {
   getDialogueMessage,
   LANGUAGE_CHOICE_LOCALIZATIONS,
   STRETCH_MODE_LOCALIZATIONS,
-  CHARACTER_NAME_LOCALIZATIONS,
   getLocalizedCharacterName,
-  BACKGROUND_NAME_LOCALIZATIONS,
   getLocalizedBackgroundName,
-  CHARACTER_EXPRESSION_LOCALIZATIONS,
   getLocalizedExpressionName,
+  getLocalizedGameName,
 } from "./dialogue/index.js";
 
 // Re-export settings localizations
