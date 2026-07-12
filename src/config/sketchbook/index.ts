@@ -42,18 +42,18 @@ export type ExpressionOptionValue =
 
 // Mapping from emotion type to image file name
 export const EMOTION_IMAGE_MAP: Record<EmotionTypeValue, string> = {
-  [EmotionType.NORMAL]: "base.png",
-  [EmotionType.HAPPY]: "happy.png",
-  [EmotionType.ANGRY]: "angry.png",
-  [EmotionType.SPEECHLESS]: "speechless.png",
-  [EmotionType.BLUSH]: "blush.png",
-  [EmotionType.YANDERE]: "yandere.png",
-  [EmotionType.CLOSED_EYES]: "closed_eyes.png",
-  [EmotionType.SAD]: "sad.png",
-  [EmotionType.SCARED]: "scared.png",
-  [EmotionType.EXCITED]: "excited.png",
-  [EmotionType.SURPRISED]: "surprised.png",
-  [EmotionType.CRYING]: "crying.png",
+  [EmotionType.NORMAL]: "base.webp",
+  [EmotionType.HAPPY]: "happy.webp",
+  [EmotionType.ANGRY]: "angry.webp",
+  [EmotionType.SPEECHLESS]: "speechless.webp",
+  [EmotionType.BLUSH]: "blush.webp",
+  [EmotionType.YANDERE]: "yandere.webp",
+  [EmotionType.CLOSED_EYES]: "closed_eyes.webp",
+  [EmotionType.SAD]: "sad.webp",
+  [EmotionType.SCARED]: "scared.webp",
+  [EmotionType.EXCITED]: "excited.webp",
+  [EmotionType.SURPRISED]: "surprised.webp",
+  [EmotionType.CRYING]: "crying.webp",
 };
 
 // Get a random emotion
@@ -99,7 +99,7 @@ export const SKETCHBOOK_CONFIG = {
   // Bracket text color (RGB) - for text inside [] or brackets
   bracketTextColor: { r: 128, g: 0, b: 128 } as RGBColor,
   // Overlay image file name
-  overlayImage: "base_overlay.png",
+  overlayImage: "base_overlay.webp",
   // Padding for image paste
   imagePadding: 12,
 } as const;

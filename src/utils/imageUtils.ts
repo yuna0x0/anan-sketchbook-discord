@@ -4,6 +4,7 @@
  * used by both imageGenerator and dialogueGenerator.
  */
 
+import { readFile } from "fs/promises";
 import { loadImage, Image } from "canvas";
 import sharp from "sharp";
 import { Locale } from "discord.js";
@@ -262,9 +263,12 @@ export async function fetchUserImage(
 
 /**
  * Load an image from file path
+ * Formats node-canvas cannot decode natively (webp, tiff, avif) are
+ * converted via the shared buffer loader.
  */
 export async function loadImageFromPath(imagePath: string): Promise<Image> {
-  return loadImage(imagePath);
+  const buffer = await readFile(imagePath);
+  return loadImageFromBuffer(buffer);
 }
 
 /**

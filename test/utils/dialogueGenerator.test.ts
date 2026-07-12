@@ -1,6 +1,6 @@
 /**
  * Dialogue Generator Tests
- * Tests for the wrapText function used in dialogue image generation
+ * Tests for the wrapText function and the end-to-end render path
  */
 
 import { describe, it } from "node:test";
@@ -8,8 +8,12 @@ import assert from "node:assert/strict";
 import { createCanvas, registerFont } from "canvas";
 import { existsSync } from "fs";
 
-import { wrapText } from "../../src/utils/dialogueGenerator.js";
+import {
+  wrapText,
+  generateDialogueImage,
+} from "../../src/utils/dialogueGenerator.js";
 import { getFontPath } from "../../src/config/fonts.js";
+import { getGame } from "../../src/config/games/index.js";
 
 // Create a test canvas context with a specific font size
 function createTestContext(fontSize: number = 72) {
@@ -163,5 +167,24 @@ describe("dialogueGenerator wrapText", () => {
         );
       }
     }
+  });
+});
+
+describe("dialogueGenerator generateDialogueImage", () => {
+  it("should render background, overlay, and sprite from WebP assets", async () => {
+    const game = getGame("manosaba");
+    const buffer = await generateDialogueImage({
+      game,
+      characterId: "ema",
+      expression: 1,
+      text: "Hello!",
+    });
+
+    // Output attachment stays PNG regardless of asset format
+    assert.ok(buffer.length > 0, "Should produce a non-empty buffer");
+    assert.equal(buffer[0], 0x89);
+    assert.equal(buffer[1], 0x50);
+    assert.equal(buffer[2], 0x4e);
+    assert.equal(buffer[3], 0x47);
   });
 });

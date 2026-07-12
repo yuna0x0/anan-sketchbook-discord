@@ -16,9 +16,9 @@ Create the game's asset tree under `assets/games/<gameId>/dialogue/`:
 
 ```
 assets/games/<gameId>/dialogue/
-  ui/<overlay>.png                      # text-box frame, drawn over the background
-  backgrounds/<any-name>.png            # one file per background
-  characters/<charId>/<charId>_<n>.png  # one sprite per expression, n is 1-based
+  ui/<overlay>.webp                      # text-box frame, drawn over the background
+  backgrounds/<any-name>.webp            # one file per background
+  characters/<charId>/<charId>_<n>.webp  # one sprite per expression, n is 1-based
 ```
 
 - The overlay is stretched to the full canvas.
@@ -26,6 +26,12 @@ assets/games/<gameId>/dialogue/
   `characterPosition`, so pre-size them to fit the game's dialogue box.
 - Sprite files must be numbered `1..N` matching the character's
   `expressions` array length.
+- Assets are lossless WebP. Sprite paths always append `SPRITE_EXTENSION`
+  (`src/config/games/paths.ts`); backgrounds and the overlay carry full
+  filenames in the game config, and the loader (`loadImageFromPath`)
+  detects the format from file content, converting formats node-canvas
+  cannot decode natively. Use `scripts/convert-assets-to-webp.ts` to
+  convert PNG sources with pixel-identity verification.
 
 Fonts are shared across games in `assets/fonts/`; add new fonts to
 `src/config/fonts.ts` if the game needs one.

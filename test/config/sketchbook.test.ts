@@ -109,22 +109,22 @@ describe("sketchbook config", () => {
           `Should have mapping for ${emotion}`,
         );
         assert.ok(
-          EMOTION_IMAGE_MAP[emotion].endsWith(".png"),
-          `Image for ${emotion} should be PNG`,
+          EMOTION_IMAGE_MAP[emotion].endsWith(".webp"),
+          `Image for ${emotion} should be WebP`,
         );
       }
     });
 
-    it("should map normal to base.png", () => {
-      assert.equal(EMOTION_IMAGE_MAP.normal, "base.png");
+    it("should map normal to base.webp", () => {
+      assert.equal(EMOTION_IMAGE_MAP.normal, "base.webp");
     });
 
-    it("should map happy to happy.png", () => {
-      assert.equal(EMOTION_IMAGE_MAP.happy, "happy.png");
+    it("should map happy to happy.webp", () => {
+      assert.equal(EMOTION_IMAGE_MAP.happy, "happy.webp");
     });
 
-    it("should map angry to angry.png", () => {
-      assert.equal(EMOTION_IMAGE_MAP.angry, "angry.png");
+    it("should map angry to angry.webp", () => {
+      assert.equal(EMOTION_IMAGE_MAP.angry, "angry.webp");
     });
 
     it("should have 12 mappings", () => {
@@ -260,7 +260,7 @@ describe("sketchbook config", () => {
 
     it("should have overlayImage", () => {
       assert.equal(typeof SKETCHBOOK_CONFIG.overlayImage, "string");
-      assert.ok(SKETCHBOOK_CONFIG.overlayImage.endsWith(".png"));
+      assert.ok(SKETCHBOOK_CONFIG.overlayImage.endsWith(".webp"));
     });
 
     it("should have imagePadding", () => {
@@ -274,39 +274,42 @@ describe("sketchbook config", () => {
 
   describe("getSketchbookAssetPath", () => {
     it("should return a path string", () => {
-      const assetPath = getSketchbookAssetPath("test.png");
+      const assetPath = getSketchbookAssetPath("test.webp");
       assert.equal(typeof assetPath, "string");
       assert.ok(assetPath.length > 0);
     });
 
     it("should include sketchbook directory", () => {
-      const assetPath = getSketchbookAssetPath("test.png");
+      const assetPath = getSketchbookAssetPath("test.webp");
       assert.ok(assetPath.includes("sketchbook"));
     });
 
     it("should include the filename", () => {
-      const assetPath = getSketchbookAssetPath("myfile.png");
-      assert.ok(assetPath.includes("myfile.png"));
+      const assetPath = getSketchbookAssetPath("myfile.webp");
+      assert.ok(assetPath.includes("myfile.webp"));
     });
   });
 
   describe("getEmotionImagePath", () => {
     it("should return path for normal emotion", () => {
       const imagePath = getEmotionImagePath("normal");
-      assert.ok(imagePath.includes("base.png"));
+      assert.ok(imagePath.includes("base.webp"));
       assert.ok(imagePath.includes("sketchbook"));
     });
 
     it("should return path for happy emotion", () => {
       const imagePath = getEmotionImagePath("happy");
-      assert.ok(imagePath.includes("happy.png"));
+      assert.ok(imagePath.includes("happy.webp"));
     });
 
     it("should return valid paths for all emotions", () => {
       const emotions = Object.values(EmotionType);
       for (const emotion of emotions) {
         const imagePath = getEmotionImagePath(emotion);
-        assert.ok(imagePath.includes(".png"), `${emotion} path should be PNG`);
+        assert.ok(
+          imagePath.includes(".webp"),
+          `${emotion} path should be WebP`,
+        );
         assert.ok(
           imagePath.includes("sketchbook"),
           `${emotion} path should be in sketchbook`,

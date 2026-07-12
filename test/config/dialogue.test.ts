@@ -78,15 +78,15 @@ describe("dialogue config", () => {
       assert.equal(manosaba.defaultBackgroundId, "bg_001_001");
       assert.equal(
         manosaba.backgrounds.bg_001_001,
-        "Background_001_001.png",
+        "Background_001_001.webp",
       );
     });
 
-    it("all backgrounds should be PNG files", () => {
+    it("all backgrounds should be WebP files", () => {
       for (const [id, filename] of Object.entries(manosaba.backgrounds)) {
         assert.ok(
-          filename.endsWith(".png"),
-          `Background ${id} should be PNG file`,
+          filename.endsWith(".webp"),
+          `Background ${id} should be WebP file`,
         );
       }
     });
@@ -460,27 +460,27 @@ describe("dialogue config", () => {
 
   describe("getGameAssetPath", () => {
     it("should return path for characters", () => {
-      const path = getGameAssetPath("manosaba", "characters", "ema", "ema_1.png");
+      const path = getGameAssetPath("manosaba", "characters", "ema", "ema_1.webp");
       assert.ok(path.includes("games"));
       assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("dialogue"));
       assert.ok(path.includes("characters"));
       assert.ok(path.includes("ema"));
-      assert.ok(path.includes("ema_1.png"));
+      assert.ok(path.includes("ema_1.webp"));
     });
 
     it("should return path for backgrounds", () => {
-      const path = getGameAssetPath("manosaba", "backgrounds", "test.png");
+      const path = getGameAssetPath("manosaba", "backgrounds", "test.webp");
       assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("backgrounds"));
-      assert.ok(path.includes("test.png"));
+      assert.ok(path.includes("test.webp"));
     });
 
     it("should return path for ui", () => {
-      const path = getGameAssetPath("manosaba", "ui", "overlay.png");
+      const path = getGameAssetPath("manosaba", "ui", "overlay.webp");
       assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("ui"));
-      assert.ok(path.includes("overlay.png"));
+      assert.ok(path.includes("overlay.webp"));
     });
   });
 
@@ -490,14 +490,14 @@ describe("dialogue config", () => {
       assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("characters"));
       assert.ok(path.includes("ema"));
-      assert.ok(path.includes("ema_1.png"));
+      assert.ok(path.includes("ema_1.webp"));
     });
 
     it("should handle different expression numbers", () => {
       const path1 = getCharacterImagePath("manosaba", "ema", 1);
       const path2 = getCharacterImagePath("manosaba", "ema", 2);
-      assert.ok(path1.includes("ema_1.png"));
-      assert.ok(path2.includes("ema_2.png"));
+      assert.ok(path1.includes("ema_1.webp"));
+      assert.ok(path2.includes("ema_2.webp"));
     });
   });
 
@@ -506,7 +506,7 @@ describe("dialogue config", () => {
       const path = getBackgroundImagePath(manosaba, "bg_001_001");
       assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("backgrounds"));
-      assert.ok(path.includes("Background_001_001.png"));
+      assert.ok(path.includes("Background_001_001.webp"));
     });
 
     it("should throw for unknown background", () => {
@@ -530,7 +530,7 @@ describe("dialogue config", () => {
       const path = getDialogueOverlayPath(manosaba);
       assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("ui"));
-      assert.ok(path.includes("overlay.png"));
+      assert.ok(path.includes("overlay.webp"));
     });
   });
 });

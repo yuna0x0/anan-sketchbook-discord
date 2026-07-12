@@ -54,7 +54,7 @@ export const MANOSABA: GameDefinition = {
     },
     nameFallbackFont: "tsukuMinPr6N",
   },
-  overlayFilename: "overlay.png",
+  overlayFilename: "overlay.webp",
   supportedNameLocales: [Locale.Japanese, Locale.ChineseTW, Locale.ChineseCN],
   fallbackNameLocale: Locale.Japanese,
   localizations: {

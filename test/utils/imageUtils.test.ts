@@ -11,7 +11,9 @@ import {
   detectImageType,
   needsConversion,
   isImageSupported,
+  loadImageFromPath,
 } from "../../src/utils/imageUtils.js";
+import { getSketchbookAssetPath } from "../../src/config/sketchbook/index.js";
 
 describe("imageUtils", () => {
   describe("rgbToCss", () => {
@@ -191,6 +193,14 @@ describe("imageUtils", () => {
     it("should return false for text content", () => {
       const textBuffer = Buffer.from("Hello World!");
       assert.equal(isImageSupported(textBuffer), false);
+    });
+  });
+
+  describe("loadImageFromPath", () => {
+    it("should decode a WebP asset from disk", async () => {
+      const image = await loadImageFromPath(getSketchbookAssetPath("base.webp"));
+      assert.ok(image.width > 0, "Image should have width");
+      assert.ok(image.height > 0, "Image should have height");
     });
   });
 });

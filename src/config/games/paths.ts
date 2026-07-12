@@ -17,6 +17,9 @@ export function getGameAssetPath(
   return join(ASSETS_DIR, "games", gameId, "dialogue", type, ...parts);
 }
 
+// File extension for character sprite assets
+export const SPRITE_EXTENSION = ".webp";
+
 // Get character image path
 export function getCharacterImagePath(
   gameId: string,
@@ -27,7 +30,7 @@ export function getCharacterImagePath(
     gameId,
     "characters",
     characterId,
-    `${characterId}_${expression}.png`,
+    `${characterId}_${expression}${SPRITE_EXTENSION}`,
   );
 }
 
