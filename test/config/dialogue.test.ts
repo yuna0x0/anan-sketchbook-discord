@@ -1,38 +1,34 @@
 /**
  * Dialogue Configuration Tests
- * Tests for characters, backgrounds, and stretch modes
+ * Tests for stretch modes, game-scoped characters/backgrounds helpers,
+ * and game-aware asset paths (exercised against the Manosaba game)
  */
 
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  STRETCH_MODES,
-  BACKGROUNDS,
-  getBackgroundIds,
-} from "../../src/config/dialogue/backgrounds.js";
+import { STRETCH_MODES } from "../../src/config/dialogue/index.js";
+import { GAMES } from "../../src/config/games/index.js";
 import {
   getCharacter,
   getCharacterIds,
-  FALLBACK_NAME_LOCALE,
-  CharacterId,
+  getBackgroundIds,
   getExpressionNumber,
   getExpressionNames,
   getNameConfig,
-} from "../../src/config/dialogue/characters.js";
-import { Locale } from "discord.js";
+  getCharacterNameFontForLocale,
+} from "../../src/config/games/helpers.js";
 import {
-  DIALOGUE_CONFIG,
-  DIALOGUE_TEXT_DEFAULT_FONT,
-  DIALOGUE_TEXT_FALLBACK_FONTS,
-  CHARACTER_NAME_LOCALE_FONTS,
-  getDialogueAssetPath,
+  getGameAssetPath,
   getCharacterImagePath,
   getBackgroundImagePath,
   getDialogueFontPath,
   getDialogueOverlayPath,
-} from "../../src/config/dialogue/index.js";
+} from "../../src/config/games/paths.js";
+import { Locale } from "discord.js";
 import { FONTS } from "../../src/config/fonts.js";
+
+const manosaba = GAMES.manosaba;
 
 describe("dialogue config", () => {
   describe("STRETCH_MODES", () => {
@@ -72,19 +68,22 @@ describe("dialogue config", () => {
     });
   });
 
-  describe("BACKGROUNDS", () => {
+  describe("backgrounds", () => {
     it("should have backgrounds defined", () => {
-      const backgroundCount = Object.keys(BACKGROUNDS).length;
+      const backgroundCount = Object.keys(manosaba.backgrounds).length;
       assert.ok(backgroundCount > 0, "Should have backgrounds defined");
     });
 
     it("should have bg_001_001 as default", () => {
-      assert.ok(BACKGROUNDS.bg_001_001, "Should have bg_001_001");
-      assert.equal(BACKGROUNDS.bg_001_001, "Background_001_001.png");
+      assert.equal(manosaba.defaultBackgroundId, "bg_001_001");
+      assert.equal(
+        manosaba.backgrounds.bg_001_001,
+        "Background_001_001.png",
+      );
     });
 
     it("all backgrounds should be PNG files", () => {
-      for (const [id, filename] of Object.entries(BACKGROUNDS)) {
+      for (const [id, filename] of Object.entries(manosaba.backgrounds)) {
         assert.ok(
           filename.endsWith(".png"),
           `Background ${id} should be PNG file`,
@@ -93,7 +92,7 @@ describe("dialogue config", () => {
     });
 
     it("all background IDs should follow naming convention", () => {
-      for (const id of Object.keys(BACKGROUNDS)) {
+      for (const id of Object.keys(manosaba.backgrounds)) {
         assert.ok(
           id.startsWith("bg_"),
           `Background ID ${id} should start with 'bg_'`,
@@ -104,48 +103,48 @@ describe("dialogue config", () => {
 
   describe("getBackgroundIds", () => {
     it("should return an array", () => {
-      const ids = getBackgroundIds();
+      const ids = getBackgroundIds(manosaba);
       assert.ok(Array.isArray(ids));
     });
 
     it("should return all background IDs", () => {
-      const ids = getBackgroundIds();
-      const expectedCount = Object.keys(BACKGROUNDS).length;
+      const ids = getBackgroundIds(manosaba);
+      const expectedCount = Object.keys(manosaba.backgrounds).length;
       assert.equal(ids.length, expectedCount);
     });
 
     it("should include bg_001_001", () => {
-      const ids = getBackgroundIds();
+      const ids = getBackgroundIds(manosaba);
       assert.ok(ids.includes("bg_001_001"));
     });
   });
 
   describe("getCharacter", () => {
     it("should return ema character", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "Should return ema character");
       assert.equal(ema!.id, "ema");
     });
 
     it("should return hiro character", () => {
-      const hiro = getCharacter("hiro");
+      const hiro = getCharacter(manosaba, "hiro");
       assert.ok(hiro, "Should return hiro character");
       assert.equal(hiro!.id, "hiro");
     });
 
     it("should return anan character", () => {
-      const anan = getCharacter("anan");
+      const anan = getCharacter(manosaba, "anan");
       assert.ok(anan, "Should return anan character");
       assert.equal(anan!.id, "anan");
     });
 
     it("should return undefined for unknown character", () => {
-      const unknown = getCharacter("unknown");
+      const unknown = getCharacter(manosaba, "unknown");
       assert.equal(unknown, undefined);
     });
 
     it("characters should have expressions array", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
       assert.ok(
         Array.isArray(ema!.expressions),
@@ -158,7 +157,7 @@ describe("dialogue config", () => {
     });
 
     it("characters should have themeColor", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
       assert.ok(ema!.themeColor, "Should have themeColor");
       assert.equal(typeof ema!.themeColor.r, "number");
@@ -167,7 +166,7 @@ describe("dialogue config", () => {
     });
 
     it("characters should have nameConfig", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
       assert.ok(ema!.nameConfig, "Should have nameConfig");
     });
@@ -175,12 +174,12 @@ describe("dialogue config", () => {
 
   describe("getCharacterIds", () => {
     it("should return an array", () => {
-      const ids = getCharacterIds();
+      const ids = getCharacterIds(manosaba);
       assert.ok(Array.isArray(ids));
     });
 
     it("should include known characters", () => {
-      const ids = getCharacterIds();
+      const ids = getCharacterIds(manosaba);
       assert.ok(ids.includes("ema"), "Should include ema");
       assert.ok(ids.includes("hiro"), "Should include hiro");
       assert.ok(ids.includes("anan"), "Should include anan");
@@ -188,31 +187,31 @@ describe("dialogue config", () => {
     });
 
     it("should have multiple characters", () => {
-      const ids = getCharacterIds();
+      const ids = getCharacterIds(manosaba);
       assert.ok(ids.length >= 10, "Should have at least 10 characters");
     });
   });
 
-  describe("FALLBACK_NAME_LOCALE", () => {
+  describe("fallbackNameLocale", () => {
     it("should be defined", () => {
-      assert.ok(FALLBACK_NAME_LOCALE, "Should have fallback locale");
+      assert.ok(manosaba.fallbackNameLocale, "Should have fallback locale");
     });
 
     it("should be Japanese locale", () => {
-      assert.equal(FALLBACK_NAME_LOCALE, "ja");
+      assert.equal(manosaba.fallbackNameLocale, "ja");
     });
   });
 
   describe("getExpressionNumber", () => {
     it("should return 1-based index for first expression", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
       const expressionNum = getExpressionNumber(ema!, ema!.expressions[0]);
       assert.equal(expressionNum, 1);
     });
 
     it("should return correct index for other expressions", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
       // Second expression should be 2
       const expressionNum = getExpressionNumber(ema!, ema!.expressions[1]);
@@ -220,14 +219,14 @@ describe("dialogue config", () => {
     });
 
     it("should return undefined for unknown expression", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
       const expressionNum = getExpressionNumber(ema!, "nonexistent_expression");
       assert.equal(expressionNum, undefined);
     });
 
     it("should work for different characters", () => {
-      const hiro = getCharacter("hiro");
+      const hiro = getCharacter(manosaba, "hiro");
       assert.ok(hiro, "hiro should exist");
       const expressionNum = getExpressionNumber(hiro!, hiro!.expressions[0]);
       assert.equal(expressionNum, 1);
@@ -236,7 +235,7 @@ describe("dialogue config", () => {
 
   describe("getExpressionNames", () => {
     it("should return array of expression names", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
       const names = getExpressionNames(ema!);
       assert.ok(Array.isArray(names));
@@ -244,14 +243,14 @@ describe("dialogue config", () => {
     });
 
     it("should return same expressions as character.expressions", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
       const names = getExpressionNames(ema!);
       assert.deepEqual(names, ema!.expressions);
     });
 
     it("should work for different characters", () => {
-      const yuki = getCharacter("yuki");
+      const yuki = getCharacter(manosaba, "yuki");
       assert.ok(yuki, "yuki should exist");
       const names = getExpressionNames(yuki!);
       assert.ok(Array.isArray(names));
@@ -261,43 +260,43 @@ describe("dialogue config", () => {
 
   describe("getNameConfig", () => {
     it("should return name config for Japanese locale", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
-      const config = getNameConfig(ema!, Locale.Japanese);
+      const config = getNameConfig(manosaba, ema!, Locale.Japanese);
       assert.ok(Array.isArray(config));
       assert.ok(config.length > 0, "Should have name config entries");
     });
 
     it("should return name config for Chinese CN locale", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
-      const config = getNameConfig(ema!, Locale.ChineseCN);
+      const config = getNameConfig(manosaba, ema!, Locale.ChineseCN);
       assert.ok(Array.isArray(config));
       assert.ok(config.length > 0, "Should have name config entries");
     });
 
     it("should return name config for Chinese TW locale", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
-      const config = getNameConfig(ema!, Locale.ChineseTW);
+      const config = getNameConfig(manosaba, ema!, Locale.ChineseTW);
       assert.ok(Array.isArray(config));
       assert.ok(config.length > 0, "Should have name config entries");
     });
 
     it("should fallback to Japanese for unsupported locales", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
       // Use a locale that is not configured for characters
-      const config = getNameConfig(ema!, Locale.EnglishUS);
-      const japaneseConfig = getNameConfig(ema!, Locale.Japanese);
+      const config = getNameConfig(manosaba, ema!, Locale.EnglishUS);
+      const japaneseConfig = getNameConfig(manosaba, ema!, Locale.Japanese);
       // Should fallback to Japanese
       assert.deepEqual(config, japaneseConfig);
     });
 
     it("name config entries should have required properties", () => {
-      const ema = getCharacter("ema");
+      const ema = getCharacter(manosaba, "ema");
       assert.ok(ema, "ema should exist");
-      const config = getNameConfig(ema!, Locale.Japanese);
+      const config = getNameConfig(manosaba, ema!, Locale.Japanese);
       for (const entry of config) {
         assert.equal(typeof entry.text, "string", "Should have text");
         assert.ok(entry.position, "Should have position");
@@ -332,127 +331,138 @@ describe("dialogue config", () => {
     });
 
     it("should work for different characters", () => {
-      const hiro = getCharacter("hiro");
+      const hiro = getCharacter(manosaba, "hiro");
       assert.ok(hiro, "hiro should exist");
-      const config = getNameConfig(hiro!, Locale.Japanese);
+      const config = getNameConfig(manosaba, hiro!, Locale.Japanese);
       assert.ok(Array.isArray(config));
       assert.ok(config.length > 0);
     });
   });
 
-  describe("DIALOGUE_CONFIG", () => {
+  describe("layout", () => {
     it("should have canvas dimensions", () => {
-      assert.equal(typeof DIALOGUE_CONFIG.canvasWidth, "number");
-      assert.equal(typeof DIALOGUE_CONFIG.canvasHeight, "number");
-      assert.ok(DIALOGUE_CONFIG.canvasWidth > 0);
-      assert.ok(DIALOGUE_CONFIG.canvasHeight > 0);
+      assert.equal(typeof manosaba.layout.canvasWidth, "number");
+      assert.equal(typeof manosaba.layout.canvasHeight, "number");
+      assert.ok(manosaba.layout.canvasWidth > 0);
+      assert.ok(manosaba.layout.canvasHeight > 0);
     });
 
     it("should have character position", () => {
-      assert.ok(DIALOGUE_CONFIG.characterPosition);
-      assert.equal(typeof DIALOGUE_CONFIG.characterPosition.x, "number");
-      assert.equal(typeof DIALOGUE_CONFIG.characterPosition.y, "number");
+      assert.ok(manosaba.layout.characterPosition);
+      assert.equal(typeof manosaba.layout.characterPosition.x, "number");
+      assert.equal(typeof manosaba.layout.characterPosition.y, "number");
     });
 
     it("should have text position", () => {
-      assert.ok(DIALOGUE_CONFIG.textPosition);
-      assert.equal(typeof DIALOGUE_CONFIG.textPosition.x, "number");
-      assert.equal(typeof DIALOGUE_CONFIG.textPosition.y, "number");
+      assert.ok(manosaba.layout.textPosition);
+      assert.equal(typeof manosaba.layout.textPosition.x, "number");
+      assert.equal(typeof manosaba.layout.textPosition.y, "number");
     });
 
     it("should have textAreaEnd", () => {
-      assert.ok(DIALOGUE_CONFIG.textAreaEnd);
+      assert.ok(manosaba.layout.textAreaEnd);
       assert.ok(
-        DIALOGUE_CONFIG.textAreaEnd.x > DIALOGUE_CONFIG.textPosition.x,
+        manosaba.layout.textAreaEnd.x > manosaba.layout.textPosition.x,
         "Text area end X should be greater than start",
       );
       assert.ok(
-        DIALOGUE_CONFIG.textAreaEnd.y > DIALOGUE_CONFIG.textPosition.y,
+        manosaba.layout.textAreaEnd.y > manosaba.layout.textPosition.y,
         "Text area end Y should be greater than start",
       );
     });
 
     it("should have defaultFontSize", () => {
-      assert.equal(typeof DIALOGUE_CONFIG.defaultFontSize, "number");
-      assert.ok(DIALOGUE_CONFIG.defaultFontSize > 0);
+      assert.equal(typeof manosaba.layout.defaultFontSize, "number");
+      assert.ok(manosaba.layout.defaultFontSize > 0);
     });
 
     it("should have lineHeightMultiplier", () => {
-      assert.equal(typeof DIALOGUE_CONFIG.lineHeightMultiplier, "number");
-      assert.ok(DIALOGUE_CONFIG.lineHeightMultiplier > 0);
+      assert.equal(typeof manosaba.layout.lineHeightMultiplier, "number");
+      assert.ok(manosaba.layout.lineHeightMultiplier > 0);
     });
 
     it("should have shadowOffset", () => {
-      assert.ok(DIALOGUE_CONFIG.shadowOffset);
-      assert.equal(typeof DIALOGUE_CONFIG.shadowOffset.x, "number");
-      assert.equal(typeof DIALOGUE_CONFIG.shadowOffset.y, "number");
+      assert.ok(manosaba.layout.shadowOffset);
+      assert.equal(typeof manosaba.layout.shadowOffset.x, "number");
+      assert.equal(typeof manosaba.layout.shadowOffset.y, "number");
     });
 
     it("should have shadowColor", () => {
-      assert.ok(DIALOGUE_CONFIG.shadowColor);
-      assert.equal(typeof DIALOGUE_CONFIG.shadowColor.r, "number");
-      assert.equal(typeof DIALOGUE_CONFIG.shadowColor.g, "number");
-      assert.equal(typeof DIALOGUE_CONFIG.shadowColor.b, "number");
+      assert.ok(manosaba.layout.shadowColor);
+      assert.equal(typeof manosaba.layout.shadowColor.r, "number");
+      assert.equal(typeof manosaba.layout.shadowColor.g, "number");
+      assert.equal(typeof manosaba.layout.shadowColor.b, "number");
     });
 
     it("should have defaultTextColor", () => {
-      assert.ok(DIALOGUE_CONFIG.defaultTextColor);
-      assert.equal(typeof DIALOGUE_CONFIG.defaultTextColor.r, "number");
-      assert.equal(typeof DIALOGUE_CONFIG.defaultTextColor.g, "number");
-      assert.equal(typeof DIALOGUE_CONFIG.defaultTextColor.b, "number");
+      assert.ok(manosaba.layout.defaultTextColor);
+      assert.equal(typeof manosaba.layout.defaultTextColor.r, "number");
+      assert.equal(typeof manosaba.layout.defaultTextColor.g, "number");
+      assert.equal(typeof manosaba.layout.defaultTextColor.b, "number");
     });
   });
 
-  describe("DIALOGUE_TEXT_DEFAULT_FONT", () => {
+  describe("fonts.textDefaultFont", () => {
     it("should be tsukuMinPr6N", () => {
-      assert.equal(DIALOGUE_TEXT_DEFAULT_FONT, "tsukuMinPr6N");
+      assert.equal(manosaba.fonts.textDefaultFont, "tsukuMinPr6N");
     });
 
     it("should be a valid font ID", () => {
       assert.ok(
-        DIALOGUE_TEXT_DEFAULT_FONT in FONTS,
+        manosaba.fonts.textDefaultFont in FONTS,
         "Default font should exist in FONTS",
       );
     });
   });
 
-  describe("DIALOGUE_TEXT_FALLBACK_FONTS", () => {
+  describe("fonts.textFallbackFonts", () => {
     it("should be an array", () => {
-      assert.ok(Array.isArray(DIALOGUE_TEXT_FALLBACK_FONTS));
+      assert.ok(Array.isArray(manosaba.fonts.textFallbackFonts));
     });
 
     it("all fallback fonts should be valid font IDs", () => {
-      for (const fontId of DIALOGUE_TEXT_FALLBACK_FONTS) {
+      for (const fontId of manosaba.fonts.textFallbackFonts) {
         assert.ok(fontId in FONTS, `${fontId} should be a valid font ID`);
       }
     });
 
     it("should include default font", () => {
       assert.ok(
-        DIALOGUE_TEXT_FALLBACK_FONTS.includes(DIALOGUE_TEXT_DEFAULT_FONT),
+        manosaba.fonts.textFallbackFonts.includes(
+          manosaba.fonts.textDefaultFont,
+        ),
       );
     });
   });
 
-  describe("CHARACTER_NAME_LOCALE_FONTS", () => {
+  describe("fonts.nameLocaleFonts", () => {
     it("should be an object", () => {
-      assert.ok(typeof CHARACTER_NAME_LOCALE_FONTS === "object");
+      assert.ok(typeof manosaba.fonts.nameLocaleFonts === "object");
     });
 
     it("all locale fonts should be valid font IDs", () => {
       for (const [locale, fontId] of Object.entries(
-        CHARACTER_NAME_LOCALE_FONTS,
+        manosaba.fonts.nameLocaleFonts,
       )) {
         if (fontId) {
           assert.ok(fontId in FONTS, `${fontId} for ${locale} should be valid`);
         }
       }
     });
+
+    it("should fall back to nameFallbackFont for unmapped locales", () => {
+      assert.equal(
+        getCharacterNameFontForLocale(manosaba, Locale.EnglishUS),
+        manosaba.fonts.nameFallbackFont,
+      );
+    });
   });
 
-  describe("getDialogueAssetPath", () => {
+  describe("getGameAssetPath", () => {
     it("should return path for characters", () => {
-      const path = getDialogueAssetPath("characters", "ema", "ema_1.png");
+      const path = getGameAssetPath("manosaba", "characters", "ema", "ema_1.png");
+      assert.ok(path.includes("games"));
+      assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("dialogue"));
       assert.ok(path.includes("characters"));
       assert.ok(path.includes("ema"));
@@ -460,15 +470,15 @@ describe("dialogue config", () => {
     });
 
     it("should return path for backgrounds", () => {
-      const path = getDialogueAssetPath("backgrounds", "test.png");
-      assert.ok(path.includes("dialogue"));
+      const path = getGameAssetPath("manosaba", "backgrounds", "test.png");
+      assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("backgrounds"));
       assert.ok(path.includes("test.png"));
     });
 
     it("should return path for ui", () => {
-      const path = getDialogueAssetPath("ui", "overlay.png");
-      assert.ok(path.includes("dialogue"));
+      const path = getGameAssetPath("manosaba", "ui", "overlay.png");
+      assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("ui"));
       assert.ok(path.includes("overlay.png"));
     });
@@ -476,15 +486,16 @@ describe("dialogue config", () => {
 
   describe("getCharacterImagePath", () => {
     it("should return correct path format", () => {
-      const path = getCharacterImagePath("ema", 1);
+      const path = getCharacterImagePath("manosaba", "ema", 1);
+      assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("characters"));
       assert.ok(path.includes("ema"));
       assert.ok(path.includes("ema_1.png"));
     });
 
     it("should handle different expression numbers", () => {
-      const path1 = getCharacterImagePath("ema", 1);
-      const path2 = getCharacterImagePath("ema", 2);
+      const path1 = getCharacterImagePath("manosaba", "ema", 1);
+      const path2 = getCharacterImagePath("manosaba", "ema", 2);
       assert.ok(path1.includes("ema_1.png"));
       assert.ok(path2.includes("ema_2.png"));
     });
@@ -492,14 +503,15 @@ describe("dialogue config", () => {
 
   describe("getBackgroundImagePath", () => {
     it("should return path for valid background", () => {
-      const path = getBackgroundImagePath("bg_001_001");
+      const path = getBackgroundImagePath(manosaba, "bg_001_001");
+      assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("backgrounds"));
       assert.ok(path.includes("Background_001_001.png"));
     });
 
     it("should throw for unknown background", () => {
       assert.throws(
-        () => getBackgroundImagePath("nonexistent"),
+        () => getBackgroundImagePath(manosaba, "nonexistent"),
         /Unknown background ID/,
       );
     });
@@ -515,7 +527,8 @@ describe("dialogue config", () => {
 
   describe("getDialogueOverlayPath", () => {
     it("should return overlay path", () => {
-      const path = getDialogueOverlayPath();
+      const path = getDialogueOverlayPath(manosaba);
+      assert.ok(path.includes("manosaba"));
       assert.ok(path.includes("ui"));
       assert.ok(path.includes("overlay.png"));
     });

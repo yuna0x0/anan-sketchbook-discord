@@ -65,12 +65,26 @@ describe("dialogue command definition", () => {
       "character",
       "expression",
       "text",
+      "game",
       "background",
       "custom_background",
       "dm",
       "language",
       "spoiler",
     ]);
+  });
+
+  it("should use static choices for game (few games, localized natively)", () => {
+    const game = json.options?.find((o) => o.name === "game");
+    assert.ok(game, "game option should exist");
+    assert.ok("choices" in game && Array.isArray(game.choices));
+    assert.ok(game.choices!.length >= 1);
+    assert.ok(
+      game.choices!.some((choice) => choice.value === "manosaba"),
+      "manosaba should be a game choice",
+    );
+    assert.ok(!("autocomplete" in game) || !game.autocomplete);
+    assert.ok(!game.required, "game should be optional (defaults to manosaba)");
   });
 
   it("should not expose advanced options in slash (moved to modals)", () => {

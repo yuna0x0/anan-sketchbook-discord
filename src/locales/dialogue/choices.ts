@@ -4,7 +4,7 @@
  */
 
 import { Locale, LocalizationMap } from "discord.js";
-import { NameConfigLocale } from "../../config/dialogue/characters.js";
+import type { NameConfigLocale } from "../../config/games/types.js";
 
 // =============================================================================
 // Language Choice Localizations

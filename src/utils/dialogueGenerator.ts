@@ -13,24 +13,23 @@ import {
 import { existsSync } from "fs";
 import { FONTS, FontId } from "../config/fonts.js";
 import { RGBColor } from "../config/types.js";
-import {
-  CharacterId,
+import type {
+  CharacterInfo,
+  GameDefinition,
   NameConfigLocale,
+} from "../config/games/types.js";
+import {
   getCharacter,
   getNameConfig,
-  FALLBACK_NAME_LOCALE,
-} from "../config/dialogue/characters.js";
-import { StretchMode } from "../config/dialogue/backgrounds.js";
+  getCharacterNameFontForLocale,
+} from "../config/games/helpers.js";
 import {
-  DIALOGUE_CONFIG,
-  DIALOGUE_TEXT_DEFAULT_FONT,
-  DIALOGUE_TEXT_FALLBACK_FONTS,
   getCharacterImagePath,
   getBackgroundImagePath,
   getDialogueFontPath,
   getDialogueOverlayPath,
-  getCharacterNameFontForLocale,
-} from "../config/dialogue/index.js";
+} from "../config/games/paths.js";
+import { StretchMode } from "../config/dialogue/index.js";
 import {
   parseTextWithEmoji,
   loadEmojiImage,
@@ -49,10 +48,13 @@ const registeredFonts = new Set<string>();
 /**
  * Get font family string with fallback for dialogue text
  */
-function getTextFontFamilyWithFallback(fontId: FontId): string {
+function getTextFontFamilyWithFallback(
+  game: GameDefinition,
+  fontId: FontId,
+): string {
   const families = [fontId];
 
-  for (const fallbackId of DIALOGUE_TEXT_FALLBACK_FONTS) {
+  for (const fallbackId of game.fonts.textFallbackFonts) {
     if (fallbackId !== fontId && !families.includes(fallbackId)) {
       families.push(fallbackId);
     }
@@ -98,7 +100,8 @@ function ensureAllFontsRegistered(): void {
  * Options for generating dialogue image
  */
 export interface DialogueImageOptions {
-  characterId: CharacterId;
+  game: GameDefinition;
+  characterId: string;
   expression: number;
   text: string;
   backgroundId?: string;
@@ -181,17 +184,15 @@ function drawBackground(
  */
 function drawCharacterName(
   ctx: CanvasRenderingContext2D,
-  characterId: CharacterId,
-  locale: NameConfigLocale = FALLBACK_NAME_LOCALE,
+  game: GameDefinition,
+  character: CharacterInfo,
+  locale: NameConfigLocale,
 ): void {
-  const character = getCharacter(characterId);
-  if (!character) return;
-
-  const { shadowOffset, shadowColor } = DIALOGUE_CONFIG;
-  const nameConfig = getNameConfig(character, locale);
+  const { shadowOffset, shadowColor } = game.layout;
+  const nameConfig = getNameConfig(game, character, locale);
 
   for (const config of nameConfig) {
-    const nameFontId = getCharacterNameFontForLocale(locale);
+    const nameFontId = getCharacterNameFontForLocale(game, locale);
     const nameFontFamily = getNameFontFamily(nameFontId);
     ctx.font = `${config.fontSize}px ${nameFontFamily}`;
 
@@ -366,8 +367,9 @@ async function drawTextWithEmojis(
   defaultColor: RGBColor,
   highlightColor: RGBColor,
   highlightBrackets: boolean,
+  shadowOffset: { x: number; y: number },
+  shadowColor: RGBColor,
 ): Promise<void> {
-  const { shadowOffset, shadowColor } = DIALOGUE_CONFIG;
   let globalInBracket = false;
 
   for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
@@ -444,25 +446,26 @@ export async function generateDialogueImage(
   options: DialogueImageOptions,
 ): Promise<Buffer> {
   const {
+    game,
     characterId,
     expression,
     text,
-    backgroundId = "bg_001_001",
+    backgroundId = game.defaultBackgroundId,
     customBackground,
     stretchMode = "zoom_x",
-    fontId = DIALOGUE_TEXT_DEFAULT_FONT,
-    fontSize = DIALOGUE_CONFIG.defaultFontSize,
+    fontId = game.fonts.textDefaultFont,
+    fontSize = game.layout.defaultFontSize,
     highlightBrackets = true,
-    nameLocale = FALLBACK_NAME_LOCALE,
+    nameLocale = game.fallbackNameLocale,
   } = options;
 
   // Ensure fonts are registered
   ensureAllFontsRegistered();
 
   // Validate character
-  const character = getCharacter(characterId);
+  const character = getCharacter(game, characterId);
   if (!character) {
-    throw new Error(`Unknown character: ${characterId}`);
+    throw new Error(`Unknown character for game ${game.id}: ${characterId}`);
   }
 
   // Validate expression
@@ -476,7 +479,7 @@ export async function generateDialogueImage(
   await preloadEmojis(text);
 
   // Create canvas
-  const { canvasWidth, canvasHeight } = DIALOGUE_CONFIG;
+  const { canvasWidth, canvasHeight } = game.layout;
   const canvas = createCanvas(canvasWidth, canvasHeight);
   const ctx = canvas.getContext("2d");
 
@@ -488,40 +491,40 @@ export async function generateDialogueImage(
   if (customBackground) {
     background = await loadImageFromBuffer(customBackground);
   } else {
-    const bgPath = getBackgroundImagePath(backgroundId);
+    const bgPath = getBackgroundImagePath(game, backgroundId);
     background = await loadImageFromPath(bgPath);
   }
   drawBackground(ctx, background, canvasWidth, canvasHeight, stretchMode);
 
   // Load and draw UI overlay
-  const overlayPath = getDialogueOverlayPath();
+  const overlayPath = getDialogueOverlayPath(game);
   if (existsSync(overlayPath)) {
     const overlay = await loadImageFromPath(overlayPath);
     ctx.drawImage(overlay, 0, 0, canvasWidth, canvasHeight);
   }
 
   // Load and draw character
-  const characterPath = getCharacterImagePath(characterId, expression);
+  const characterPath = getCharacterImagePath(game.id, characterId, expression);
   const characterImage = await loadImageFromPath(characterPath);
   ctx.drawImage(
     characterImage,
-    DIALOGUE_CONFIG.characterPosition.x,
-    DIALOGUE_CONFIG.characterPosition.y,
+    game.layout.characterPosition.x,
+    game.layout.characterPosition.y,
   );
 
   // Draw character name
-  drawCharacterName(ctx, characterId, nameLocale);
+  drawCharacterName(ctx, game, character, nameLocale);
 
   // Calculate text area
   const { textPosition, textAreaEnd, lineHeightMultiplier, defaultTextColor } =
-    DIALOGUE_CONFIG;
+    game.layout;
   const maxWidth = textAreaEnd.x - textPosition.x;
   const maxHeight = textAreaEnd.y - textPosition.y;
   const lineHeight = Math.floor(fontSize * lineHeightMultiplier);
   const maxLines = Math.floor(maxHeight / lineHeight) || 1;
 
   // Set up font for text with fallback support
-  const fontFamily = getTextFontFamilyWithFallback(fontId);
+  const fontFamily = getTextFontFamilyWithFallback(game, fontId);
   ctx.font = `${fontSize}px ${fontFamily}`;
   ctx.textBaseline = "alphabetic";
 
@@ -547,6 +550,8 @@ export async function generateDialogueImage(
     defaultTextColor,
     character.themeColor,
     highlightBrackets,
+    game.layout.shadowOffset,
+    game.layout.shadowColor,
   );
 
   // Export as PNG

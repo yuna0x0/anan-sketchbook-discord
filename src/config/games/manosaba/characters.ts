@@ -1,43 +1,14 @@
 /**
- * Dialogue Characters Configuration
- * Character definitions including expressions, theme colors, and localized name configs
+ * Manosaba Characters
+ * Character definitions including expressions, theme colors, and localized
+ * name configs for Magical Girl Witch Trials (Manosaba)
  */
 
 import { Locale } from "discord.js";
-import { RGBColor } from "../types.js";
-
-// Name text configuration for rendering character names
-export interface NameTextConfig {
-  text: string;
-  position: { x: number; y: number };
-  fontColor: RGBColor;
-  fontSize: number;
-}
-
-// Supported locales for name configuration (using Discord Locale)
-export type NameConfigLocale = Locale;
-
-// Localized name configurations (partial record of Discord Locale to name config)
-export type LocalizedNameConfig = Partial<
-  Record<NameConfigLocale, NameTextConfig[]>
->;
-
-// Character information
-export interface CharacterInfo {
-  id: string;
-  expressions: string[];
-  themeColor: RGBColor;
-  nameConfig: LocalizedNameConfig;
-  /**
-   * Hidden characters are story spoilers: they are excluded from default
-   * character suggestions and only revealed when a search query closely
-   * matches one of their names.
-   */
-  hidden?: boolean;
-}
+import type { CharacterInfo } from "../types.js";
 
 // All available characters
-export const CHARACTERS: Record<string, CharacterInfo> = {
+export const MANOSABA_CHARACTERS = {
   ema: {
     id: "ema",
     expressions: [
@@ -1304,53 +1275,9 @@ export const CHARACTERS: Record<string, CharacterInfo> = {
       ],
     },
   },
-};
+} satisfies Record<string, CharacterInfo>;
 
-// Character IDs as a type
-export type CharacterId = keyof typeof CHARACTERS;
-
-// Get character by ID
-export function getCharacter(id: string): CharacterInfo | undefined {
-  return CHARACTERS[id];
-}
-
-// Get all character IDs
-export function getCharacterIds(): CharacterId[] {
-  return Object.keys(CHARACTERS) as CharacterId[];
-}
-
-// Get expression number from expression name for a character
-export function getExpressionNumber(
-  character: CharacterInfo,
-  expressionName: string,
-): number | undefined {
-  const index = character.expressions.indexOf(expressionName);
-  return index >= 0 ? index + 1 : undefined;
-}
-
-// Get all expression names for a character
-export function getExpressionNames(character: CharacterInfo): string[] {
-  return character.expressions;
-}
-
-// Fallback locale when requested locale is not available for a character
-export const FALLBACK_NAME_LOCALE: NameConfigLocale = Locale.Japanese;
-
-// Locales supported for character name rendering in dialogue images
-export const SUPPORTED_NAME_LOCALES: NameConfigLocale[] = [
-  Locale.Japanese,
-  Locale.ChineseTW,
-  Locale.ChineseCN,
-];
-
-// Get name config for a specific locale, falling back to FALLBACK_NAME_LOCALE
-export function getNameConfig(
-  character: CharacterInfo,
-  locale: NameConfigLocale,
-): NameTextConfig[] {
-  return (
-    character.nameConfig[locale] ??
-    character.nameConfig[FALLBACK_NAME_LOCALE] ??
-    []
-  );
-}
+// Manosaba character IDs as a compile-time union, used inside this game
+// module to keep localization tables exhaustive. Cross-game code uses plain
+// strings validated against the resolved GameDefinition.
+export type ManosabaCharacterId = keyof typeof MANOSABA_CHARACTERS;

@@ -1,7 +1,7 @@
 /**
  * Character Search
  * Autocomplete suggestions for the /dialogue character option, with
- * anti-spoiler handling for hidden characters.
+ * anti-spoiler handling for hidden characters. Search is scoped to a game.
  *
  * Visible characters match loosely against their ID and every localized name
  * (so a Chinese name still works on an English client). Hidden characters are
@@ -11,8 +11,7 @@
  */
 
 import { Locale } from "discord.js";
-import { CHARACTERS, CharacterId } from "../config/dialogue/characters.js";
-import { CHARACTER_NAME_LOCALIZATIONS } from "../locales/index.js";
+import type { GameDefinition } from "../config/games/types.js";
 
 // Discord's autocomplete result limit
 const MAX_SUGGESTIONS = 25;
@@ -24,20 +23,20 @@ const HIDDEN_MIN_QUERY_ASCII = 3;
 const HIDDEN_MIN_QUERY_OTHER = 1;
 
 export interface CharacterSuggestion {
-  id: CharacterId;
+  id: string;
   displayName: string;
 }
 
 /** All lowercased search candidates for a character: ID plus every localized name */
-function searchCandidates(id: CharacterId): string[] {
-  const names = Object.values(CHARACTER_NAME_LOCALIZATIONS[id] ?? {}).filter(
-    (name): name is string => typeof name === "string",
-  );
+function searchCandidates(game: GameDefinition, id: string): string[] {
+  const names = Object.values(
+    game.localizations.characterNames[id] ?? {},
+  ).filter((name): name is string => typeof name === "string");
   return [id, ...names].map((name) => name.toLowerCase());
 }
 
-function displayName(id: CharacterId, locale: string): string {
-  const localizations = CHARACTER_NAME_LOCALIZATIONS[id] ?? {};
+function displayName(game: GameDefinition, id: string, locale: string): string {
+  const localizations = game.localizations.characterNames[id] ?? {};
   return (
     localizations[locale as Locale] ?? localizations[Locale.EnglishUS] ?? id
   );
@@ -52,7 +51,8 @@ function isAscii(value: string): boolean {
  * Whether a query is a close enough match to reveal a hidden character
  */
 export function matchesHiddenCharacter(
-  id: CharacterId,
+  game: GameDefinition,
+  id: string,
   query: string,
 ): boolean {
   const q = query.trim().toLowerCase();
@@ -60,33 +60,34 @@ export function matchesHiddenCharacter(
   if (q.length < minLength) {
     return false;
   }
-  return searchCandidates(id).some((candidate) => candidate.includes(q));
+  return searchCandidates(game, id).some((candidate) => candidate.includes(q));
 }
 
 /**
- * Get character suggestions for an autocomplete query.
+ * Get character suggestions for an autocomplete query within a game.
  * Hidden characters are excluded unless the query closely matches them.
  */
 export function searchCharacters(
+  game: GameDefinition,
   query: string,
   locale: string,
 ): CharacterSuggestion[] {
   const q = query.trim().toLowerCase();
   const results: CharacterSuggestion[] = [];
 
-  for (const [id, info] of Object.entries(CHARACTERS)) {
+  for (const [id, info] of Object.entries(game.characters)) {
     if (info.hidden) {
-      if (!matchesHiddenCharacter(id, query)) {
+      if (!matchesHiddenCharacter(game, id, query)) {
         continue;
       }
     } else if (
       q.length > 0 &&
-      !searchCandidates(id).some((candidate) => candidate.includes(q))
+      !searchCandidates(game, id).some((candidate) => candidate.includes(q))
     ) {
       continue;
     }
 
-    results.push({ id, displayName: displayName(id, locale) });
+    results.push({ id, displayName: displayName(game, id, locale) });
   }
 
   return results.slice(0, MAX_SUGGESTIONS);

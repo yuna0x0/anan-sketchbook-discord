@@ -23,16 +23,20 @@ import {
   editReplyWithFiles,
   replyWithEphemeralError,
 } from "../utils/interactionUtils.js";
+import type { NameConfigLocale } from "../config/games/types.js";
 import {
-  CHARACTERS,
-  CharacterId,
-  NameConfigLocale,
+  GAMES,
+  GameId,
+  DEFAULT_GAME_ID,
+  isGameId,
+  getGameIds,
+  getGame,
+} from "../config/games/index.js";
+import {
+  getBackgroundIds,
   getExpressionNumber,
-  FALLBACK_NAME_LOCALE,
-  SUPPORTED_NAME_LOCALES,
-} from "../config/dialogue/characters.js";
-import { BACKGROUNDS, getBackgroundIds } from "../config/dialogue/backgrounds.js";
-import { DIALOGUE_TEXT_DEFAULT_FONT } from "../config/dialogue/index.js";
+  isSupportedNameLocale,
+} from "../config/games/helpers.js";
 import { ExpressionOption } from "../config/sketchbook/index.js";
 import { fetchUserImage } from "../utils/imageUtils.js";
 import { ImageFilter } from "../utils/imageFilters.js";
@@ -59,15 +63,23 @@ import {
 } from "../locales/index.js";
 import { getGuildDefaultLanguage } from "../database/repositories/guildSettings.js";
 
-// Check if a Discord locale is supported for name display
-function isSupportedNameLocale(
-  locale: Locale | string,
-): locale is NameConfigLocale {
-  return SUPPORTED_NAME_LOCALES.includes(locale as NameConfigLocale);
-}
+// Build game choices with localizations (use EnglishUS as default name).
+// Games are static choices rather than autocomplete: only a handful will ever
+// exist, and adding one already requires a deploy + command re-registration.
+const gameChoices = getGameIds().map((gameId) => ({
+  name: GAMES[gameId].localizations.gameName[Locale.EnglishUS] ?? gameId,
+  name_localizations: GAMES[gameId].localizations.gameName,
+  value: gameId,
+}));
+
+// Name locales supported by at least one game (deduped union); the selected
+// game's own supported list is enforced at execute time
+const allNameLocales = [
+  ...new Set(getGameIds().flatMap((gameId) => GAMES[gameId].supportedNameLocales)),
+];
 
 // Build language choices with localizations (use EnglishUS as default name)
-const languageChoices = SUPPORTED_NAME_LOCALES.map((locale) => ({
+const languageChoices = allNameLocales.map((locale) => ({
   name: LANGUAGE_CHOICE_LOCALIZATIONS[locale]?.[Locale.EnglishUS] ?? locale,
   name_localizations: LANGUAGE_CHOICE_LOCALIZATIONS[locale],
   value: locale,
@@ -122,6 +134,14 @@ export const data = new SlashCommandBuilder()
   // Optional options
   .addStringOption((option) =>
     option
+      .setName("game")
+      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.game[Locale.EnglishUS]!)
+      .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.game)
+      .setRequired(false)
+      .addChoices(...gameChoices),
+  )
+  .addStringOption((option) =>
+    option
       .setName("background")
       .setDescription(
         DIALOGUE_OPTION_LOCALIZATIONS.background[Locale.EnglishUS]!,
@@ -174,8 +194,11 @@ export async function autocomplete(
   const focusedOption = interaction.options.getFocused(true);
   const userLocale = interaction.locale;
 
+  // Scope all suggestions to the selected game (default when omitted/invalid)
+  const game = getGame(interaction.options.getString("game"));
+
   if (focusedOption.name === "character") {
-    const suggestions = searchCharacters(focusedOption.value, userLocale);
+    const suggestions = searchCharacters(game, focusedOption.value, userLocale);
     await interaction.respond(
       suggestions.map((suggestion) => ({
         name: suggestion.displayName,
@@ -187,11 +210,9 @@ export async function autocomplete(
 
   if (focusedOption.name === "expression") {
     // Get the selected character
-    const characterId = interaction.options.getString(
-      "character",
-    ) as CharacterId | null;
+    const characterId = interaction.options.getString("character");
 
-    if (!characterId || !CHARACTERS[characterId]) {
+    if (!characterId || !game.characters[characterId]) {
       // No character selected yet, show a message
       const selectCharacterMessage = getDialogueMessage(
         "selectCharacterFirst",
@@ -206,7 +227,7 @@ export async function autocomplete(
       return;
     }
 
-    const character = CHARACTERS[characterId];
+    const character = game.characters[characterId];
     const searchValue = focusedOption.value.toLowerCase();
 
     // Get localized random option name from EXPRESSION_DISPLAY_NAME_LOCALIZATIONS
@@ -225,6 +246,7 @@ export async function autocomplete(
       },
       ...character.expressions.map((expressionId) => {
         const localizedName = getLocalizedExpressionName(
+          game.id,
           expressionId,
           userLocale,
         );
@@ -253,11 +275,11 @@ export async function autocomplete(
     );
   } else if (focusedOption.name === "background") {
     const searchValue = focusedOption.value.toLowerCase();
-    const backgroundIds = getBackgroundIds();
+    const backgroundIds = getBackgroundIds(game);
 
     // Create a list of backgrounds with their localized names
     const backgroundsWithNames = backgroundIds.map((id) => {
-      const localizedName = getLocalizedBackgroundName(id, userLocale);
+      const localizedName = getLocalizedBackgroundName(game.id, id, userLocale);
       return {
         id,
         localizedName,
@@ -308,11 +330,15 @@ export async function execute(
   });
 
   try {
+    // Resolve the selected game (choices constrain values from normal
+    // clients; crafted values fall back to the default game)
+    const gameOption = interaction.options.getString("game");
+    const gameId: GameId =
+      gameOption && isGameId(gameOption) ? gameOption : DEFAULT_GAME_ID;
+    const game = GAMES[gameId];
+
     // Get required options
-    const characterId = interaction.options.getString(
-      "character",
-      true,
-    ) as CharacterId;
+    const characterId = interaction.options.getString("character", true);
     const expressionId = interaction.options.getString("expression", true);
     const text = interaction.options.getString("text", true);
 
@@ -324,13 +350,18 @@ export async function execute(
     const userSpecifiedLanguage = interaction.options.getString(
       "language",
     ) as NameConfigLocale | null;
-    // Use user-specified language, or user's Discord locale if supported, or fallback to Japanese
+    // Use user-specified language, or user's Discord locale if supported,
+    // or the game's fallback locale (validated against the selected game,
+    // since the language choices are the union across all games)
     const nameLanguage: NameConfigLocale =
-      userSpecifiedLanguage ??
-      (isSupportedNameLocale(locale) ? locale : FALLBACK_NAME_LOCALE);
+      userSpecifiedLanguage && isSupportedNameLocale(game, userSpecifiedLanguage)
+        ? userSpecifiedLanguage
+        : isSupportedNameLocale(game, locale)
+          ? locale
+          : game.fallbackNameLocale;
 
     // Validate character exists
-    const character = CHARACTERS[characterId];
+    const character = game.characters[characterId];
     if (!character) {
       await replyWithEphemeralError(
         interaction,
@@ -354,7 +385,11 @@ export async function execute(
       await replyWithEphemeralError(
         interaction,
         getDialogueMessage("invalidExpression", locale, {
-          characterName: getLocalizedCharacterName(characterId, nameLanguage),
+          characterName: getLocalizedCharacterName(
+            gameId,
+            characterId,
+            nameLanguage,
+          ),
           maxExpression: String(character.expressions.length),
         }),
       );
@@ -362,7 +397,7 @@ export async function execute(
     }
 
     // Validate background ID if provided
-    if (backgroundId && !BACKGROUNDS[backgroundId]) {
+    if (backgroundId && !game.backgrounds[backgroundId]) {
       await replyWithEphemeralError(
         interaction,
         getDialogueMessage("unknownBackground", locale, { backgroundId }),
@@ -388,13 +423,14 @@ export async function execute(
     // the Adjust/Effects buttons on the message expose the rest
     const params: DialogueParams = {
       command: "dialogue",
+      gameId,
       characterId,
       expressionId: finalExpressionId,
       text,
       backgroundId: customBackgroundBuffer ? undefined : backgroundId,
       stretchMode: "zoom_x",
-      fontId: DIALOGUE_TEXT_DEFAULT_FONT,
-      fontSize: 72,
+      fontId: game.fonts.textDefaultFont,
+      fontSize: game.layout.defaultFontSize,
       highlightBrackets: true,
       nameLocale: nameLanguage,
       filter: ImageFilter.NONE,

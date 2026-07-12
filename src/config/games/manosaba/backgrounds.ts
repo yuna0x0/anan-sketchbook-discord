@@ -1,22 +1,10 @@
 /**
- * Dialogue Backgrounds Configuration
- * Background definitions and stretch mode options for dialogue images
+ * Manosaba Backgrounds
+ * Background definitions for Magical Girl Witch Trials (Manosaba)
  */
 
-// Background stretch modes
-export const STRETCH_MODES = {
-  stretch: "Stretch to fill",
-  stretch_x: "Stretch horizontally",
-  stretch_y: "Stretch vertically",
-  zoom_x: "Zoom horizontally (keep ratio)",
-  zoom_y: "Zoom vertically (keep ratio)",
-  original: "Original size (centered)",
-} as const;
-
-export type StretchMode = keyof typeof STRETCH_MODES;
-
 // Available backgrounds (simplified list - first variant of each)
-export const BACKGROUNDS: Record<string, string> = {
+export const MANOSABA_BACKGROUNDS = {
   bg_001_001: "Background_001_001.png",
   bg_001_002: "Background_001_002.png",
   bg_002_001: "Background_002_001.png",
@@ -75,11 +63,12 @@ export const BACKGROUNDS: Record<string, string> = {
   bg_032_001: "Background_032_001.png",
   bg_033_001: "Background_033_001.png",
   bg_034_001: "Background_034_001.png",
-};
+} satisfies Record<string, string>;
 
-export type BackgroundId = keyof typeof BACKGROUNDS;
+// Manosaba background IDs as a compile-time union, used inside this game
+// module to keep localization tables exhaustive
+export type ManosabaBackgroundId = keyof typeof MANOSABA_BACKGROUNDS;
 
-// Get all background IDs
-export function getBackgroundIds(): string[] {
-  return Object.keys(BACKGROUNDS);
-}
+// Background used when none is selected
+export const MANOSABA_DEFAULT_BACKGROUND_ID: ManosabaBackgroundId =
+  "bg_001_001";
