@@ -10,5 +10,5 @@ export const MANOSABA_GAME_NAME: LocalizationMap = {
   [Locale.EnglishGB]: "Magical Girl Witch Trials",
   [Locale.ChineseTW]: "魔法少女的魔女審判",
   [Locale.ChineseCN]: "魔法少女的魔女审判",
-  [Locale.Japanese]: "魔法少女の魔女裁判",
+  [Locale.Japanese]: "魔法少女ノ魔女裁判",
 };
