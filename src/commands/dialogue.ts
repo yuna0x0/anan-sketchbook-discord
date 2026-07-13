@@ -46,6 +46,7 @@ import {
   renderGeneration,
   buildGenerationAttachment,
   DialogueParams,
+  resolveFormatOption,
 } from "../services/generationService.js";
 import { adjustSessions } from "../services/adjustSessionStore.js";
 import { buildImageActionsRow } from "../components/actionRow.js";
@@ -62,6 +63,8 @@ import {
   getDialogueMessage,
   getLocalizedExpressionName,
   EXPRESSION_DISPLAY_NAME_LOCALIZATIONS,
+  FORMAT_OPTION_DESCRIPTION_LOCALIZATIONS,
+  FORMAT_CHOICES,
   resolveLocale,
 } from "../locales/index.js";
 import { getGuildDefaultLanguage } from "../database/repositories/guildSettings.js";
@@ -187,6 +190,16 @@ export const data = new SlashCommandBuilder()
       .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.spoiler[Locale.EnglishUS]!)
       .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.spoiler)
       .setRequired(false),
+  )
+  .addStringOption((option) =>
+    option
+      .setName("format")
+      .setDescription(
+        FORMAT_OPTION_DESCRIPTION_LOCALIZATIONS[Locale.EnglishUS]!,
+      )
+      .setDescriptionLocalizations(FORMAT_OPTION_DESCRIPTION_LOCALIZATIONS)
+      .setRequired(false)
+      .addChoices(...FORMAT_CHOICES),
   );
 
 /**
@@ -492,6 +505,9 @@ export async function execute(
       highlightBrackets: true,
       nameLocale: nameLanguage,
       filter: ImageFilter.NONE,
+      outputFormat: resolveFormatOption(
+        interaction.options.getString("format"),
+      ),
       spoiler: interaction.options.getBoolean("spoiler") ?? false,
     };
     const imageBuffer = await renderGeneration(params, customBackgroundBuffer);

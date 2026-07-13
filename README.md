@@ -79,6 +79,7 @@ docker compose down
 | `expression` | No | Facial expression (default: Normal, supports Random) |
 | `dm` | No | Send to DMs |
 | `spoiler` | No | Mark the image as a spoiler (default: false) |
+| `format` | No | Output image format: WebP (default), PNG, or JPEG |
 
 *At least one of `text` or `image` is required. Uploaded images are limited to 8 MB and 16 megapixels (configurable via `MAX_IMAGE_UPLOAD_MB` / `MAX_IMAGE_PIXELS_MP`).
 
@@ -95,6 +96,7 @@ docker compose down
 | `dm` | No | Send to DMs |
 | `language` | No | Character name language (auto-detects from Discord locale, fallback per game) |
 | `spoiler` | No | Mark the image as a spoiler (default: false) |
+| `format` | No | Output image format: WebP (default), PNG, or JPEG |
 
 The dialogue system supports multiple games: each game contributes its own characters, backgrounds, dialogue box layout, and localizations. See [docs/adding-a-game.md](docs/adding-a-game.md) for how to add a new game.
 
@@ -126,7 +128,7 @@ The fine-tune field takes space-separated `key=value` pairs covering both image 
 
 Numeric fine-tune options map to [sharp](https://sharp.pixelplumbing.com/) image operations. Submitting a modal re-renders the image in place. Editing sessions are kept in memory and expire after 24 hours of inactivity or on restart; the delete button works forever.
 
-Generated images are uploaded as WebP by default (much smaller than PNG at visually identical quality); use `format=png` in the fine-tune field for a lossless PNG.
+Generated images are uploaded as WebP by default (much smaller than PNG at visually identical quality). If you plan to save and re-share an image on platforms with patchy WebP handling (Telegram renders WebP as stickers, for example), pick PNG via the `format` slash option or `format=png` in the fine-tune field.
 
 ## Localization
 

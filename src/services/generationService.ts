@@ -31,19 +31,21 @@ import {
   getLocalizedCharacterName,
 } from "../locales/index.js";
 
-// Output attachment formats. WebP is the default (about 83% smaller than
-// PNG at quality 90); png/jpg are advanced choices via the Effects
-// fine-tune field (format=png). JPEG has no alpha, so it is flattened
-// onto white.
-export const OUTPUT_FORMATS = ["webp", "png", "jpg"] as const;
-export type OutputFormat = (typeof OUTPUT_FORMATS)[number];
-export const DEFAULT_OUTPUT_FORMAT: OutputFormat = "webp";
+import {
+  DEFAULT_OUTPUT_FORMAT,
+  type OutputFormat,
+} from "../config/outputFormats.js";
+
+export {
+  OUTPUT_FORMATS,
+  DEFAULT_OUTPUT_FORMAT,
+  isOutputFormat,
+  resolveFormatOption,
+  type OutputFormat,
+} from "../config/outputFormats.js";
+
 const OUTPUT_WEBP_QUALITY = 90;
 const OUTPUT_JPEG_QUALITY = 90;
-
-export function isOutputFormat(value: string): value is OutputFormat {
-  return (OUTPUT_FORMATS as readonly string[]).includes(value);
-}
 
 export interface SketchbookParams {
   command: "sketchbook";

@@ -26,7 +26,18 @@ describe("sketchbook command definition", () => {
       "expression",
       "dm",
       "spoiler",
+      "format",
     ]);
+  });
+
+  it("should offer webp, png, and jpg format choices", () => {
+    const format = json.options?.find((o) => o.name === "format");
+    assert.ok(format && "choices" in format && Array.isArray(format.choices));
+    assert.deepEqual(
+      format.choices!.map((choice) => choice.value),
+      ["webp", "png", "jpg"],
+    );
+    assert.ok(!format.required, "format should be optional");
   });
 
   it("should not expose advanced options in slash (moved to modals)", () => {
@@ -71,6 +82,7 @@ describe("dialogue command definition", () => {
       "dm",
       "language",
       "spoiler",
+      "format",
     ]);
   });
 

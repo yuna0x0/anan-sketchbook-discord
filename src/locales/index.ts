@@ -88,3 +88,9 @@ export {
   getFineTuneHelpMessage,
   getFineTuneInvalidMessage,
 } from "./adjust.js";
+
+// Re-export output format option localizations
+export {
+  FORMAT_OPTION_DESCRIPTION_LOCALIZATIONS,
+  FORMAT_CHOICES,
+} from "./formats.js";

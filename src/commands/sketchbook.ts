@@ -34,6 +34,7 @@ import {
   renderGeneration,
   buildGenerationAttachment,
   SketchbookParams,
+  resolveFormatOption,
 } from "../services/generationService.js";
 import { adjustSessions } from "../services/adjustSessionStore.js";
 import { buildImageActionsRow } from "../components/actionRow.js";
@@ -42,6 +43,8 @@ import {
   COMMAND_DESCRIPTION_LOCALIZATIONS,
   OPTION_DESCRIPTION_LOCALIZATIONS,
   EXPRESSION_DISPLAY_NAME_LOCALIZATIONS,
+  FORMAT_OPTION_DESCRIPTION_LOCALIZATIONS,
+  FORMAT_CHOICES,
   getResponseMessage,
   getSketchbookMessage,
   resolveLocale,
@@ -54,6 +57,7 @@ const expressionChoices = Object.values(ExpressionOption).map((value) => ({
   name_localizations: EXPRESSION_DISPLAY_NAME_LOCALIZATIONS[value],
   value,
 }));
+
 
 // Build the slash command with the core options only
 export const data = new SlashCommandBuilder()
@@ -110,6 +114,16 @@ export const data = new SlashCommandBuilder()
       )
       .setDescriptionLocalizations(OPTION_DESCRIPTION_LOCALIZATIONS.spoiler)
       .setRequired(false),
+  )
+  .addStringOption((option) =>
+    option
+      .setName("format")
+      .setDescription(
+        FORMAT_OPTION_DESCRIPTION_LOCALIZATIONS[Locale.EnglishUS]!,
+      )
+      .setDescriptionLocalizations(FORMAT_OPTION_DESCRIPTION_LOCALIZATIONS)
+      .setRequired(false)
+      .addChoices(...FORMAT_CHOICES),
   );
 
 /**
@@ -184,6 +198,9 @@ export async function execute(
       wrapAlgorithm: "greedy",
       fontId: SKETCHBOOK_DEFAULT_FONT,
       filter: ImageFilter.NONE,
+      outputFormat: resolveFormatOption(
+        interaction.options.getString("format"),
+      ),
       spoiler: interaction.options.getBoolean("spoiler") ?? false,
     };
     const imageBuffer = await renderGeneration(params, contentImageBuffer);
