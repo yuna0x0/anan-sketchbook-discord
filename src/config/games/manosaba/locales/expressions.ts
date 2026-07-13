@@ -29,11 +29,11 @@ export const MANOSABA_EXPRESSION_NAMES: Record<string, LocalizationMap> = {
     [Locale.Japanese]: "不機嫌",
   },
   ema_expression_4: {
-    [Locale.EnglishUS]: "Shy (hand down)",
-    [Locale.EnglishGB]: "Shy (hand down)",
-    [Locale.ChineseTW]: "害羞（沒舉起手）",
-    [Locale.ChineseCN]: "害羞（没举起手）",
-    [Locale.Japanese]: "照れ（手を上げず）",
+    [Locale.EnglishUS]: "Shy",
+    [Locale.EnglishGB]: "Shy",
+    [Locale.ChineseTW]: "害羞",
+    [Locale.ChineseCN]: "害羞",
+    [Locale.Japanese]: "照れ",
   },
   ema_expression_5: {
     [Locale.EnglishUS]: "Confused",
