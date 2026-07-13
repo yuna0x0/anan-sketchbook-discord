@@ -73,6 +73,8 @@ import type { HAlign, VAlign } from "../utils/sketchbookGenerator.js";
 import {
   renderGeneration,
   buildGenerationAttachment,
+  isOutputFormat,
+  type OutputFormat,
 } from "../services/generationService.js";
 import {
   adjustSessions,
@@ -266,6 +268,7 @@ function buildToggleRadio(
 function buildFineTuneField(
   adjustments: ImageAdjustments | undefined,
   settings: FilterSettings | undefined,
+  outputFormat: OutputFormat | undefined,
   locale: string,
 ): LabelBuilder {
   const input = new TextInputBuilder()
@@ -277,6 +280,7 @@ function buildFineTuneField(
   const serialized = [
     serializeAdjustments(adjustments),
     serializeFilterSettings(settings),
+    outputFormat ? `format=${outputFormat}` : "",
   ]
     .filter((part) => part.length > 0)
     .join(" ");
@@ -292,19 +296,31 @@ function buildFineTuneField(
 
 /**
  * Parse the combined fine-tune input, routing each token to the adjustments
- * or filter-settings parser by key
+ * parser, the filter-settings parser, or the output-format setting by key
  */
 function parseCombinedFineTune(input: string): {
   adjustments?: ImageAdjustments;
   settings?: FilterSettings;
+  outputFormat?: OutputFormat;
   invalidTokens: string[];
 } {
   const adjustmentTokens: string[] = [];
   const settingTokens: string[] = [];
+  let outputFormat: OutputFormat | undefined;
+  const formatInvalid: string[] = [];
   for (const token of splitKeyValueTokens(input)) {
     const key = token.split("=")[0]?.toLowerCase() ?? "";
     if (key === "tint" || key in ADJUSTMENT_LIMITS) {
       adjustmentTokens.push(token);
+    } else if (key === "format") {
+      // jpeg is accepted as an alias for jpg
+      const raw = token.split("=")[1]?.toLowerCase() ?? "";
+      const value = raw === "jpeg" ? "jpg" : raw;
+      if (isOutputFormat(value)) {
+        outputFormat = value;
+      } else {
+        formatInvalid.push(token);
+      }
     } else {
       settingTokens.push(token);
     }
@@ -315,9 +331,11 @@ function parseCombinedFineTune(input: string): {
   return {
     adjustments: parsedAdjustments.adjustments,
     settings: parsedSettings.settings,
+    outputFormat,
     invalidTokens: [
       ...parsedAdjustments.invalidTokens,
       ...parsedSettings.invalidTokens,
+      ...formatInvalid,
     ],
   };
 }
@@ -571,7 +589,7 @@ function buildSketchbookEffectsModal(
         false,
         locale,
       ),
-      buildFineTuneField(params.adjustments, params.filterSettings, locale),
+      buildFineTuneField(params.adjustments, params.filterSettings, params.outputFormat, locale),
     );
 }
 
@@ -631,7 +649,7 @@ function buildDialogueEffectsModal(
         locale,
       ),
       backgroundLabel,
-      buildFineTuneField(params.adjustments, params.filterSettings, locale),
+      buildFineTuneField(params.adjustments, params.filterSettings, params.outputFormat, locale),
     );
 }
 
@@ -959,6 +977,7 @@ export async function handleEffectsModalSubmit(
     ? {
         adjustments: session.params.adjustments,
         settings: session.params.filterSettings,
+        outputFormat: session.params.outputFormat,
         invalidTokens: [],
       }
     : parseCombinedFineTune(fineTuneRaw);
@@ -992,6 +1011,7 @@ export async function handleEffectsModalSubmit(
     }
     params.adjustments = adjustments;
     params.filterSettings = parsed.settings;
+    params.outputFormat = parsed.outputFormat;
 
     await regenerate(interaction, messageId, session, params);
     await sendHelpFollowUpIfRequested(interaction, helpRequested);
@@ -1013,6 +1033,7 @@ export async function handleEffectsModalSubmit(
   }
   params.adjustments = adjustments;
   params.filterSettings = parsed.settings;
+  params.outputFormat = parsed.outputFormat;
 
   // A valid stock background ID switches away from any custom background;
   // empty input keeps the current background

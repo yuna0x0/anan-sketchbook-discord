@@ -261,14 +261,67 @@ export async function fetchUserImage(
 // Image Loading
 // =============================================================================
 
+// Byte-bounded LRU cache of decoded images for trusted on-disk assets only
+// (never user uploads). WebP assets pay a sharp decode plus a node-canvas
+// decode on every load; caching the decoded Image removes that cost for
+// repeat renders. Cost per entry is estimated as width * height * 4 (the
+// decoded RGBA bitmap dominates the memory footprint).
+interface CachedImage {
+  image: Image;
+  bytes: number;
+}
+
+const DEFAULT_IMAGE_CACHE_MB = 128;
+
+// Map iteration order doubles as LRU order: hits re-insert their entry
+const imageCache = new Map<string, CachedImage>();
+let imageCacheBytes = 0;
+
+function getImageCacheBudgetBytes(): number {
+  const mb = Number(process.env.IMAGE_CACHE_MB ?? DEFAULT_IMAGE_CACHE_MB);
+  const safeMb = Number.isFinite(mb) && mb >= 0 ? mb : DEFAULT_IMAGE_CACHE_MB;
+  return safeMb * 1024 * 1024;
+}
+
+/**
+ * Empty the decoded-image cache (used by tests)
+ */
+export function clearImageCache(): void {
+  imageCache.clear();
+  imageCacheBytes = 0;
+}
+
 /**
  * Load an image from file path
  * Formats node-canvas cannot decode natively (webp, tiff, avif) are
- * converted via the shared buffer loader.
+ * converted via the shared buffer loader. Decoded images are cached in a
+ * byte-bounded LRU (IMAGE_CACHE_MB, default 128).
  */
 export async function loadImageFromPath(imagePath: string): Promise<Image> {
+  const cached = imageCache.get(imagePath);
+  if (cached) {
+    imageCache.delete(imagePath);
+    imageCache.set(imagePath, cached);
+    return cached.image;
+  }
+
   const buffer = await readFile(imagePath);
-  return loadImageFromBuffer(buffer);
+  const image = await loadImageFromBuffer(buffer);
+
+  const bytes = image.width * image.height * 4;
+  const budget = getImageCacheBudgetBytes();
+  if (bytes <= budget) {
+    imageCache.set(imagePath, { image, bytes });
+    imageCacheBytes += bytes;
+    // Evict oldest entries until within budget; the entry just inserted is
+    // newest, so it survives
+    for (const [key, entry] of imageCache) {
+      if (imageCacheBytes <= budget) break;
+      imageCache.delete(key);
+      imageCacheBytes -= entry.bytes;
+    }
+  }
+  return image;
 }
 
 /**

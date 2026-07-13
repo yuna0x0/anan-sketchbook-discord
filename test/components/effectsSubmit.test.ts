@@ -41,6 +41,7 @@ function nonDefaultParams(): SketchbookParams {
  */
 function createInteraction(
   radioAnswers: Record<string, string> = {},
+  fineTuneValue = "brightness=1.5 dot_size=12",
 ) {
   const editReply = mock.fn<(options: unknown) => Promise<unknown>>(
     async () => ({}),
@@ -60,7 +61,7 @@ function createInteraction(
       getRadioGroup: (customId: string) => radioAnswers[customId] ?? null,
       getStringSelectValues: () => [],
       getTextInputValue: (customId: string) => {
-        if (customId === "fine_tune") return "brightness=1.5 dot_size=12";
+        if (customId === "fine_tune") return fineTuneValue;
         return "";
       },
     },
@@ -121,6 +122,71 @@ describe("handleEffectsModalSubmit", () => {
         (session?.params as SketchbookParams).useOverlay,
         true,
         "overlay toggle applied",
+      );
+    } finally {
+      adjustSessions.delete(MESSAGE_ID);
+    }
+  });
+
+  it("should apply a format token from the fine-tune field", async () => {
+    adjustSessions.set(MESSAGE_ID, {
+      userId: USER_ID,
+      params: nonDefaultParams(),
+    });
+
+    try {
+      const { interaction, editReply, followUp } = createInteraction(
+        {},
+        "brightness=1.5 dot_size=12 format=png",
+      );
+      await handleEffectsModalSubmit(interaction);
+
+      const lastEdit = editReply.mock.calls.at(-1)?.arguments[0] as {
+        files?: unknown[];
+      };
+      assert.ok(lastEdit?.files?.length, "should re-render with a new file");
+      assert.equal(followUp.mock.callCount(), 0, "no error follow-up");
+
+      const session = adjustSessions.get(MESSAGE_ID);
+      assert.equal(session?.params.outputFormat, "png", "format applied");
+    } finally {
+      adjustSessions.delete(MESSAGE_ID);
+    }
+  });
+
+  it("should reject an unknown format value with the help card", async () => {
+    adjustSessions.set(MESSAGE_ID, {
+      userId: USER_ID,
+      params: nonDefaultParams(),
+    });
+
+    try {
+      const replyCalls: unknown[] = [];
+      const { interaction, editReply } = createInteraction(
+        {},
+        "format=bmp",
+      );
+      (interaction as unknown as { reply: (o: unknown) => Promise<unknown> }).reply =
+        async (options: unknown) => {
+          replyCalls.push(options);
+          return {};
+        };
+      await handleEffectsModalSubmit(interaction);
+
+      assert.equal(replyCalls.length, 1, "should reply with the error");
+      assert.ok(
+        String((replyCalls[0] as { content?: string }).content).includes(
+          "format=bmp",
+        ),
+        "error names the invalid token",
+      );
+      assert.equal(editReply.mock.callCount(), 0, "no re-render on error");
+
+      const session = adjustSessions.get(MESSAGE_ID);
+      assert.equal(
+        session?.params.outputFormat,
+        undefined,
+        "format unchanged on error",
       );
     } finally {
       adjustSessions.delete(MESSAGE_ID);

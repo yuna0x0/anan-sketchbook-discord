@@ -237,6 +237,9 @@ Dithering: \`px_size\` 1 to 8 (default 2), \`color_steps\` 2 to 8 (default 2)
 Paper texture: \`grain\` 0.1 to 3 (default 1)
 Heatmap has no settings.
 
+**Output**
+\`format\`: \`webp\` (default), \`png\`, \`jpg\` (attachment file format; jpg has no transparency)
+
 Clearing a field resets it to the defaults.
 Example: \`brightness=1.2 hue=90 tint=ff000055\``,
   [Locale.EnglishGB]: `**Fine-tune** (space-separated key=value pairs)
@@ -254,6 +257,9 @@ Halftone: \`dot_size\` 4 to 24 (default 4), \`dot_angle\` 0 to 90 (default 45)
 Dithering: \`px_size\` 1 to 8 (default 2), \`color_steps\` 2 to 8 (default 2)
 Paper texture: \`grain\` 0.1 to 3 (default 1)
 Heatmap has no settings.
+
+**Output**
+\`format\`: \`webp\` (default), \`png\`, \`jpg\` (attachment file format; jpg has no transparency)
 
 Clearing a field resets it to the defaults.
 Example: \`brightness=1.2 hue=90 tint=ff000055\``,
@@ -273,6 +279,9 @@ Example: \`brightness=1.2 hue=90 tint=ff000055\``,
 紙張紋理：\`grain\` 0.1 至 3（預設 1）
 熱力圖沒有設定項目。
 
+**輸出**
+\`format\`：\`webp\`（預設）、\`png\`、\`jpg\`（附件檔案格式；jpg 不支援透明）
+
 清空欄位即可恢復預設值。
 範例：\`brightness=1.2 hue=90 tint=ff000055\``,
   [Locale.ChineseCN]: `**微调**（以空格分隔的 key=value）
@@ -291,6 +300,9 @@ Example: \`brightness=1.2 hue=90 tint=ff000055\``,
 纸张纹理：\`grain\` 0.1 至 3（默认 1）
 热力图没有设置项。
 
+**输出**
+\`format\`：\`webp\`（默认）、\`png\`、\`jpg\`（附件文件格式；jpg 不支持透明）
+
 清空字段即可恢复默认值。
 示例：\`brightness=1.2 hue=90 tint=ff000055\``,
   [Locale.Japanese]: `**微調整**（スペース区切りの key=value）
@@ -308,6 +320,9 @@ Example: \`brightness=1.2 hue=90 tint=ff000055\``,
 ディザリング：\`px_size\` 1～8（デフォルト2）、\`color_steps\` 2～8（デフォルト2）
 紙のテクスチャ：\`grain\` 0.1～3（デフォルト1）
 ヒートマップに設定はありません。
+
+**出力**
+\`format\`：\`webp\`（デフォルト）、\`png\`、\`jpg\`（添付ファイル形式。jpg は透過非対応）
 
 欄を空にするとデフォルトに戻ります。
 例：\`brightness=1.2 hue=90 tint=ff000055\``,

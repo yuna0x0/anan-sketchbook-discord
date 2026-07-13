@@ -122,8 +122,11 @@ The fine-tune field takes space-separated `key=value` pairs covering both image 
 | `dot_size`, `dot_angle` | 4 to 24, 0 to 90 | halftone dot grid and screen angle |
 | `px_size`, `color_steps` | 1 to 8, 2 to 8 | dithering pixel size and color levels |
 | `grain` | 0.1 to 3 | paper texture intensity |
+| `format` | `webp`, `png`, `jpg` | attachment file format (default `webp`; `jpg` has no transparency) |
 
 Numeric fine-tune options map to [sharp](https://sharp.pixelplumbing.com/) image operations. Submitting a modal re-renders the image in place. Editing sessions are kept in memory and expire after 24 hours of inactivity or on restart; the delete button works forever.
+
+Generated images are uploaded as WebP by default (much smaller than PNG at visually identical quality); use `format=png` in the fine-tune field for a lossless PNG.
 
 ## Localization
 

@@ -12,6 +12,7 @@ import {
   needsConversion,
   isImageSupported,
   loadImageFromPath,
+  clearImageCache,
 } from "../../src/utils/imageUtils.js";
 import { getSketchbookAssetPath } from "../../src/config/sketchbook/index.js";
 
@@ -201,6 +202,59 @@ describe("imageUtils", () => {
       const image = await loadImageFromPath(getSketchbookAssetPath("base.webp"));
       assert.ok(image.width > 0, "Image should have width");
       assert.ok(image.height > 0, "Image should have height");
+    });
+
+    it("should return the cached instance on repeat loads", async () => {
+      clearImageCache();
+      const path = getSketchbookAssetPath("happy.webp");
+      const first = await loadImageFromPath(path);
+      const second = await loadImageFromPath(path);
+      assert.equal(second, first, "Second load should hit the cache");
+    });
+
+    it("should not cache when the budget is zero", async () => {
+      const previous = process.env.IMAGE_CACHE_MB;
+      process.env.IMAGE_CACHE_MB = "0";
+      clearImageCache();
+      try {
+        const path = getSketchbookAssetPath("sad.webp");
+        const first = await loadImageFromPath(path);
+        const second = await loadImageFromPath(path);
+        assert.notEqual(second, first, "Nothing should be cached at budget 0");
+      } finally {
+        if (previous === undefined) {
+          delete process.env.IMAGE_CACHE_MB;
+        } else {
+          process.env.IMAGE_CACHE_MB = previous;
+        }
+        clearImageCache();
+      }
+    });
+
+    it("should evict the least recently used entry over budget", async () => {
+      const previous = process.env.IMAGE_CACHE_MB;
+      clearImageCache();
+      try {
+        const pathA = getSketchbookAssetPath("angry.webp");
+        const pathB = getSketchbookAssetPath("blush.webp");
+        // Budget sized to hold one decoded image but not two
+        const probe = await loadImageFromPath(pathA);
+        const oneImageMb = (probe.width * probe.height * 4) / 1024 / 1024;
+        process.env.IMAGE_CACHE_MB = String(oneImageMb * 1.5);
+        clearImageCache();
+
+        const firstA = await loadImageFromPath(pathA);
+        await loadImageFromPath(pathB); // evicts A
+        const secondA = await loadImageFromPath(pathA);
+        assert.notEqual(secondA, firstA, "A should have been evicted by B");
+      } finally {
+        if (previous === undefined) {
+          delete process.env.IMAGE_CACHE_MB;
+        } else {
+          process.env.IMAGE_CACHE_MB = previous;
+        }
+        clearImageCache();
+      }
     });
   });
 });
