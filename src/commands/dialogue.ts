@@ -424,7 +424,7 @@ export async function execute(
             characterId,
             nameLanguage,
           ),
-          maxExpression: String(character.expressions.length),
+          gameName: getLocalizedGameName(gameId, locale),
         }),
       );
       return;

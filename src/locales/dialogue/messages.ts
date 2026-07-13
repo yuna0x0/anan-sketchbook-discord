@@ -56,15 +56,15 @@ export const DIALOGUE_MESSAGES = {
   } as LocaleRecord,
   invalidExpression: {
     [Locale.EnglishUS]:
-      "Invalid expression for {characterName}. Valid range: 1-{maxExpression}. Use autocomplete to pick a valid expression.",
+      "{characterName} has no such expression in {gameName}. Use autocomplete to pick one of their expressions.",
     [Locale.EnglishGB]:
-      "Invalid expression for {characterName}. Valid range: 1-{maxExpression}. Use autocomplete to pick a valid expression.",
+      "{characterName} has no such expression in {gameName}. Use autocomplete to pick one of their expressions.",
     [Locale.ChineseTW]:
-      "{characterName} 的表情無效。有效範圍：1-{maxExpression}。請使用自動完成選擇有效的表情。",
+      "{gameName} 的 {characterName} 沒有這個表情。請使用自動完成選擇表情。",
     [Locale.ChineseCN]:
-      "{characterName} 的表情无效。有效范围：1-{maxExpression}。请使用自动完成选择有效的表情。",
+      "{gameName} 的 {characterName} 没有这个表情。请使用自动完成选择表情。",
     [Locale.Japanese]:
-      "{characterName} の表情が無効です。有効範囲：1-{maxExpression}。オートコンプリートで有効な表情を選択してください。",
+      "{gameName} の {characterName} にはこの表情がありません。オートコンプリートで表情を選択してください。",
   } as LocaleRecord,
   unknownBackground: {
     [Locale.EnglishUS]:
