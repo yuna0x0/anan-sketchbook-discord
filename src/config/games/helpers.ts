@@ -64,6 +64,30 @@ export function getCharacterNameFontForLocale(
   return game.fonts.nameLocaleFonts[locale] ?? game.fonts.nameFallbackFont;
 }
 
+// Find IDs of games (other than excludeId) whose roster contains the
+// character ID. IDs are game-scoped, so the same ID may exist in several
+// games and name a different character in each; all matches are returned.
+export function findOtherGamesWithCharacter<K extends string>(
+  games: Record<K, GameDefinition>,
+  characterId: string,
+  excludeId: K,
+): K[] {
+  return (Object.keys(games) as K[]).filter(
+    (id) => id !== excludeId && games[id].characters[characterId] !== undefined,
+  );
+}
+
+// Find IDs of games (other than excludeId) that contain the background ID
+export function findOtherGamesWithBackground<K extends string>(
+  games: Record<K, GameDefinition>,
+  backgroundId: string,
+  excludeId: K,
+): K[] {
+  return (Object.keys(games) as K[]).filter(
+    (id) => id !== excludeId && games[id].backgrounds[backgroundId] !== undefined,
+  );
+}
+
 // Check if a Discord locale is supported for name display in a game
 export function isSupportedNameLocale(
   game: GameDefinition,

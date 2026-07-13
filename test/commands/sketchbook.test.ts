@@ -62,10 +62,10 @@ describe("dialogue command definition", () => {
 
   it("should keep only the core options", () => {
     assert.deepEqual(optionNames, [
+      "game",
       "character",
       "expression",
       "text",
-      "game",
       "background",
       "custom_background",
       "dm",
@@ -84,7 +84,10 @@ describe("dialogue command definition", () => {
       "manosaba should be a game choice",
     );
     assert.ok(!("autocomplete" in game) || !game.autocomplete);
-    assert.ok(!game.required, "game should be optional (defaults to manosaba)");
+    assert.ok(
+      game.required,
+      "game should be required and first so autocomplete scopes to the pick",
+    );
   });
 
   it("should not expose advanced options in slash (moved to modals)", () => {

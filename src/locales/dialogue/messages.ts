@@ -19,35 +19,88 @@ export const DIALOGUE_MESSAGES = {
     [Locale.Japanese]: "先にキャラクターを選択してください",
   } as LocaleRecord,
   unknownCharacter: {
-    [Locale.EnglishUS]: "Unknown character: {characterId}",
-    [Locale.EnglishGB]: "Unknown character: {characterId}",
-    [Locale.ChineseTW]: "未知角色：{characterId}",
-    [Locale.ChineseCN]: "未知角色：{characterId}",
-    [Locale.Japanese]: "不明なキャラクター：{characterId}",
+    [Locale.EnglishUS]:
+      "Unknown character for {gameName}: {characterId}. Use autocomplete to pick a character from this game.",
+    [Locale.EnglishGB]:
+      "Unknown character for {gameName}: {characterId}. Use autocomplete to pick a character from this game.",
+    [Locale.ChineseTW]:
+      "{gameName} 沒有這個角色：{characterId}。請使用自動完成選擇此遊戲的角色。",
+    [Locale.ChineseCN]:
+      "{gameName} 没有这个角色：{characterId}。请使用自动完成选择此游戏的角色。",
+    [Locale.Japanese]:
+      "{gameName} に存在しないキャラクターです：{characterId}。オートコンプリートでこのゲームのキャラクターを選択してください。",
+  } as LocaleRecord,
+  characterWrongGame: {
+    [Locale.EnglishUS]:
+      "{characterName} belongs to {otherGame}, but the selected game is {selectedGame}. Set the game option to {otherGame} to use this character.",
+    [Locale.EnglishGB]:
+      "{characterName} belongs to {otherGame}, but the selected game is {selectedGame}. Set the game option to {otherGame} to use this character.",
+    [Locale.ChineseTW]:
+      "{characterName} 屬於 {otherGame}，但目前選擇的遊戲是 {selectedGame}。請將 game 選項設為 {otherGame} 以使用此角色。",
+    [Locale.ChineseCN]:
+      "{characterName} 属于 {otherGame}，但当前选择的游戏是 {selectedGame}。请将 game 选项设为 {otherGame} 以使用此角色。",
+    [Locale.Japanese]:
+      "{characterName} は {otherGame} のキャラクターですが、選択中のゲームは {selectedGame} です。このキャラクターを使うには game オプションを {otherGame} に設定してください。",
+  } as LocaleRecord,
+  characterWrongGameMultiple: {
+    [Locale.EnglishUS]:
+      "Character {characterId} is not in {selectedGame}, but exists in: {otherGames}. Set the game option to one of those games to use it.",
+    [Locale.EnglishGB]:
+      "Character {characterId} is not in {selectedGame}, but exists in: {otherGames}. Set the game option to one of those games to use it.",
+    [Locale.ChineseTW]:
+      "角色 {characterId} 不在 {selectedGame} 中，但存在於：{otherGames}。請將 game 選項設為其中一款遊戲以使用此角色。",
+    [Locale.ChineseCN]:
+      "角色 {characterId} 不在 {selectedGame} 中，但存在于：{otherGames}。请将 game 选项设为其中一款游戏以使用此角色。",
+    [Locale.Japanese]:
+      "キャラクター {characterId} は {selectedGame} にはいませんが、次のゲームに存在します：{otherGames}。使用するには game オプションをいずれかのゲームに設定してください。",
   } as LocaleRecord,
   invalidExpression: {
     [Locale.EnglishUS]:
-      "Invalid expression for {characterName}. Valid range: 1-{maxExpression}",
+      "Invalid expression for {characterName}. Valid range: 1-{maxExpression}. Use autocomplete to pick a valid expression.",
     [Locale.EnglishGB]:
-      "Invalid expression for {characterName}. Valid range: 1-{maxExpression}",
+      "Invalid expression for {characterName}. Valid range: 1-{maxExpression}. Use autocomplete to pick a valid expression.",
     [Locale.ChineseTW]:
-      "{characterName} 的表情無效。有效範圍：1-{maxExpression}",
+      "{characterName} 的表情無效。有效範圍：1-{maxExpression}。請使用自動完成選擇有效的表情。",
     [Locale.ChineseCN]:
-      "{characterName} 的表情无效。有效范围：1-{maxExpression}",
+      "{characterName} 的表情无效。有效范围：1-{maxExpression}。请使用自动完成选择有效的表情。",
     [Locale.Japanese]:
-      "{characterName} の表情が無効です。有効範囲：1-{maxExpression}",
+      "{characterName} の表情が無効です。有効範囲：1-{maxExpression}。オートコンプリートで有効な表情を選択してください。",
   } as LocaleRecord,
   unknownBackground: {
     [Locale.EnglishUS]:
-      "Unknown background: {backgroundId}. Use autocomplete to see available backgrounds.",
+      "Unknown background for {gameName}: {backgroundId}. Use autocomplete to see this game's backgrounds.",
     [Locale.EnglishGB]:
-      "Unknown background: {backgroundId}. Use autocomplete to see available backgrounds.",
+      "Unknown background for {gameName}: {backgroundId}. Use autocomplete to see this game's backgrounds.",
     [Locale.ChineseTW]:
-      "未知背景：{backgroundId}。請使用自動完成查看可用背景。",
+      "{gameName} 沒有這個背景：{backgroundId}。請使用自動完成查看此遊戲的可用背景。",
     [Locale.ChineseCN]:
-      "未知背景：{backgroundId}。请使用自动完成查看可用背景。",
+      "{gameName} 没有这个背景：{backgroundId}。请使用自动完成查看此游戏的可用背景。",
     [Locale.Japanese]:
-      "不明な背景：{backgroundId}。オートコンプリートで利用可能な背景を確認してください。",
+      "{gameName} に存在しない背景です：{backgroundId}。オートコンプリートでこのゲームの背景を確認してください。",
+  } as LocaleRecord,
+  backgroundWrongGame: {
+    [Locale.EnglishUS]:
+      "This background belongs to {otherGame}, but the selected game is {selectedGame}. Set the game option to {otherGame} to use it.",
+    [Locale.EnglishGB]:
+      "This background belongs to {otherGame}, but the selected game is {selectedGame}. Set the game option to {otherGame} to use it.",
+    [Locale.ChineseTW]:
+      "此背景屬於 {otherGame}，但目前選擇的遊戲是 {selectedGame}。請將 game 選項設為 {otherGame} 以使用此背景。",
+    [Locale.ChineseCN]:
+      "此背景属于 {otherGame}，但当前选择的游戏是 {selectedGame}。请将 game 选项设为 {otherGame} 以使用此背景。",
+    [Locale.Japanese]:
+      "この背景は {otherGame} のものですが、選択中のゲームは {selectedGame} です。使用するには game オプションを {otherGame} に設定してください。",
+  } as LocaleRecord,
+  backgroundWrongGameMultiple: {
+    [Locale.EnglishUS]:
+      "Background {backgroundId} is not in {selectedGame}, but exists in: {otherGames}. Set the game option to one of those games to use it.",
+    [Locale.EnglishGB]:
+      "Background {backgroundId} is not in {selectedGame}, but exists in: {otherGames}. Set the game option to one of those games to use it.",
+    [Locale.ChineseTW]:
+      "背景 {backgroundId} 不在 {selectedGame} 中，但存在於：{otherGames}。請將 game 選項設為其中一款遊戲以使用此背景。",
+    [Locale.ChineseCN]:
+      "背景 {backgroundId} 不在 {selectedGame} 中，但存在于：{otherGames}。请将 game 选项设为其中一款游戏以使用此背景。",
+    [Locale.Japanese]:
+      "背景 {backgroundId} は {selectedGame} にはありませんが、次のゲームに存在します：{otherGames}。使用するには game オプションをいずれかのゲームに設定してください。",
   } as LocaleRecord,
 } as const;
 

@@ -86,10 +86,10 @@ docker compose down
 
 | Option | Required | Description |
 |--------|----------|-------------|
+| `game` | Yes | Game to use characters and backgrounds from |
 | `character` | Yes | Character to display (autocomplete, scoped to the selected game) |
 | `expression` | Yes | Expression ID (autocomplete, supports Random) |
 | `text` | Yes | Dialogue text |
-| `game` | No | Game to use characters and backgrounds from (default: Magical Girl Witch Trials) |
 | `background` | No | Background image ID (autocomplete, scoped to the selected game) |
 | `custom_background` | No | Upload custom background |
 | `dm` | No | Send to DMs |

@@ -23,14 +23,11 @@ export const DIALOGUE_COMMAND_DESCRIPTION_LOCALIZATIONS: LocalizationMap = {
 
 export const DIALOGUE_OPTION_LOCALIZATIONS: Record<string, LocalizationMap> = {
   game: {
-    [Locale.EnglishUS]:
-      "The game to use characters and backgrounds from (default: Magical Girl Witch Trials)",
-    [Locale.EnglishGB]:
-      "The game to use characters and backgrounds from (default: Magical Girl Witch Trials)",
-    [Locale.ChineseTW]: "使用哪款遊戲的角色和背景 (預設: 魔法少女的魔女審判)",
-    [Locale.ChineseCN]: "使用哪款游戏的角色和背景 (默认: 魔法少女的魔女审判)",
-    [Locale.Japanese]:
-      "キャラクターと背景に使用するゲーム (デフォルト: 魔法少女ノ魔女裁判)",
+    [Locale.EnglishUS]: "The game to use characters and backgrounds from",
+    [Locale.EnglishGB]: "The game to use characters and backgrounds from",
+    [Locale.ChineseTW]: "使用哪款遊戲的角色和背景",
+    [Locale.ChineseCN]: "使用哪款游戏的角色和背景",
+    [Locale.Japanese]: "キャラクターと背景に使用するゲーム",
   },
   character: {
     [Locale.EnglishUS]: "The character to display",

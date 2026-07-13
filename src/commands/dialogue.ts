@@ -33,6 +33,8 @@ import {
   getGame,
 } from "../config/games/index.js";
 import {
+  findOtherGamesWithBackground,
+  findOtherGamesWithCharacter,
   getBackgroundIds,
   getExpressionNumber,
   isSupportedNameLocale,
@@ -54,6 +56,7 @@ import {
   DIALOGUE_OPTION_LOCALIZATIONS,
   getLocalizedBackgroundName,
   getLocalizedCharacterName,
+  getLocalizedGameName,
   LANGUAGE_CHOICE_LOCALIZATIONS,
   getResponseMessage,
   getDialogueMessage,
@@ -102,6 +105,16 @@ export const data = new SlashCommandBuilder()
     InteractionContextType.PrivateChannel,
   ])
   // Required options
+  // Game comes first so autocomplete for the options below is scoped to
+  // the user's pick instead of silently defaulting
+  .addStringOption((option) =>
+    option
+      .setName("game")
+      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.game[Locale.EnglishUS]!)
+      .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.game)
+      .setRequired(true)
+      .addChoices(...gameChoices),
+  )
   // Character uses autocomplete (not static choices) so hidden characters
   // can be kept out of the default suggestions
   .addStringOption((option) =>
@@ -132,14 +145,6 @@ export const data = new SlashCommandBuilder()
       .setRequired(true),
   )
   // Optional options
-  .addStringOption((option) =>
-    option
-      .setName("game")
-      .setDescription(DIALOGUE_OPTION_LOCALIZATIONS.game[Locale.EnglishUS]!)
-      .setDescriptionLocalizations(DIALOGUE_OPTION_LOCALIZATIONS.game)
-      .setRequired(false)
-      .addChoices(...gameChoices),
-  )
   .addStringOption((option) =>
     option
       .setName("background")
@@ -332,9 +337,8 @@ export async function execute(
   try {
     // Resolve the selected game (choices constrain values from normal
     // clients; crafted values fall back to the default game)
-    const gameOption = interaction.options.getString("game");
-    const gameId: GameId =
-      gameOption && isGameId(gameOption) ? gameOption : DEFAULT_GAME_ID;
+    const gameOption = interaction.options.getString("game", true);
+    const gameId: GameId = isGameId(gameOption) ? gameOption : DEFAULT_GAME_ID;
     const game = GAMES[gameId];
 
     // Get required options
@@ -360,13 +364,43 @@ export async function execute(
           ? locale
           : game.fallbackNameLocale;
 
-    // Validate character exists
+    // Validate the character exists in the selected game; when it belongs
+    // to other registered games instead, point the user at the game option
+    // (the same ID may exist in several games, so list every match)
     const character = game.characters[characterId];
     if (!character) {
-      await replyWithEphemeralError(
-        interaction,
-        getDialogueMessage("unknownCharacter", locale, { characterId }),
+      const otherGameIds = findOtherGamesWithCharacter(
+        GAMES,
+        characterId,
+        gameId,
       );
+      const selectedGame = getLocalizedGameName(gameId, locale);
+      let message: string;
+      if (otherGameIds.length === 1) {
+        message = getDialogueMessage("characterWrongGame", locale, {
+          characterName: getLocalizedCharacterName(
+            otherGameIds[0],
+            characterId,
+            nameLanguage,
+          ),
+          selectedGame,
+          otherGame: getLocalizedGameName(otherGameIds[0], locale),
+        });
+      } else if (otherGameIds.length > 1) {
+        message = getDialogueMessage("characterWrongGameMultiple", locale, {
+          characterId,
+          selectedGame,
+          otherGames: otherGameIds
+            .map((id) => getLocalizedGameName(id, locale))
+            .join(", "),
+        });
+      } else {
+        message = getDialogueMessage("unknownCharacter", locale, {
+          characterId,
+          gameName: selectedGame,
+        });
+      }
+      await replyWithEphemeralError(interaction, message);
       return;
     }
 
@@ -396,12 +430,36 @@ export async function execute(
       return;
     }
 
-    // Validate background ID if provided
+    // Validate the background ID if provided, with the same wrong-game
+    // hinting as characters
     if (backgroundId && !game.backgrounds[backgroundId]) {
-      await replyWithEphemeralError(
-        interaction,
-        getDialogueMessage("unknownBackground", locale, { backgroundId }),
+      const otherGameIds = findOtherGamesWithBackground(
+        GAMES,
+        backgroundId,
+        gameId,
       );
+      const selectedGame = getLocalizedGameName(gameId, locale);
+      let message: string;
+      if (otherGameIds.length === 1) {
+        message = getDialogueMessage("backgroundWrongGame", locale, {
+          selectedGame,
+          otherGame: getLocalizedGameName(otherGameIds[0], locale),
+        });
+      } else if (otherGameIds.length > 1) {
+        message = getDialogueMessage("backgroundWrongGameMultiple", locale, {
+          backgroundId,
+          selectedGame,
+          otherGames: otherGameIds
+            .map((id) => getLocalizedGameName(id, locale))
+            .join(", "),
+        });
+      } else {
+        message = getDialogueMessage("unknownBackground", locale, {
+          backgroundId,
+          gameName: selectedGame,
+        });
+      }
+      await replyWithEphemeralError(interaction, message);
       return;
     }
 
