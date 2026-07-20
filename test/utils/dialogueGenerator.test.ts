@@ -10,6 +10,7 @@ import { existsSync } from "fs";
 
 import {
   wrapText,
+  fitTextToArea,
   generateDialogueImage,
 } from "../../src/utils/dialogueGenerator.js";
 import { getFontPath } from "../../src/config/fonts.js";
@@ -167,6 +168,54 @@ describe("dialogueGenerator wrapText", () => {
         );
       }
     }
+  });
+});
+
+describe("dialogueGenerator fitTextToArea", () => {
+  const game = getGame("manosaba");
+  const maxWidth = game.layout.textAreaEnd.x - game.layout.textPosition.x;
+  const maxHeight = game.layout.textAreaEnd.y - game.layout.textPosition.y;
+
+  function fit(text: string, requestedFontSize = game.layout.defaultFontSize) {
+    const ctx = createTestContext(requestedFontSize);
+    return fitTextToArea(
+      ctx,
+      text,
+      maxWidth,
+      maxHeight,
+      "sans-serif",
+      requestedFontSize,
+      game.layout.minFontSize,
+      game.layout.lineHeightMultiplier,
+    );
+  }
+
+  it("should keep the requested size when the text already fits", () => {
+    const result = fit("こんにちは");
+    assert.equal(result.fontSize, game.layout.defaultFontSize);
+  });
+
+  it("should shrink the font when the text overflows the area", () => {
+    const long = "這是一段很長的測試文字，用來確認字級會自動縮小。".repeat(6);
+    const result = fit(long);
+
+    assert.ok(
+      result.fontSize < game.layout.defaultFontSize,
+      `Expected shrink, got ${result.fontSize}`,
+    );
+    assert.ok(result.fontSize >= game.layout.minFontSize);
+
+    const maxLines = Math.floor(maxHeight / result.lineHeight) || 1;
+    assert.ok(
+      result.lines.length <= maxLines,
+      `Fitted text still overflows: ${result.lines.length} > ${maxLines}`,
+    );
+  });
+
+  it("should never shrink below the configured minimum", () => {
+    const huge = "あ".repeat(2000);
+    const result = fit(huge);
+    assert.equal(result.fontSize, game.layout.minFontSize);
   });
 });
 

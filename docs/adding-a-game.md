@@ -66,8 +66,9 @@ src/config/games/<gameId>/
 In `<gameId>/index.ts`, assemble the `GameDefinition`:
 
 - `layout`: measure the game's dialogue box: canvas size, character sprite
-  position, text area start/end, default font size, line height, shadow, and
-  default text color.
+  position, text area start/end, default font size, minimum font size, line
+  height, shadow, and default text color. Text that overflows the text area
+  shrinks toward `minFontSize` before it is truncated.
 - `fonts`: default/fallback dialogue text fonts and per-locale name plate
   fonts.
 - `overlayFilename`, `defaultBackgroundId`.

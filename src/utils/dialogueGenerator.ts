@@ -355,6 +355,73 @@ export function wrapText(
 }
 
 /**
+ * Shrink the font until the wrapped text fits the text area.
+ * Only shrinks: the requested size is never exceeded, so text that already
+ * fits keeps the game's authored look. Returns the largest fitting size
+ * (or minFontSize when nothing fits, leaving the caller to truncate).
+ */
+export function fitTextToArea(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  maxWidth: number,
+  maxHeight: number,
+  fontFamily: string,
+  requestedFontSize: number,
+  minFontSize: number,
+  lineHeightMultiplier: number,
+): { fontSize: number; lines: string[]; lineHeight: number } {
+  const measure = (size: number) => {
+    ctx.font = `${size}px ${fontFamily}`;
+    const lines = wrapText(ctx, text, maxWidth, size);
+    const lineHeight = Math.floor(size * lineHeightMultiplier);
+    const maxLines = Math.floor(maxHeight / lineHeight) || 1;
+    return { lines, lineHeight, fits: lines.length <= maxLines };
+  };
+
+  const requested = measure(requestedFontSize);
+  if (requested.fits || requestedFontSize <= minFontSize) {
+    return {
+      fontSize: requestedFontSize,
+      lines: requested.lines,
+      lineHeight: requested.lineHeight,
+    };
+  }
+
+  // Binary search for the largest size that still fits
+  let lo = Math.max(1, Math.floor(minFontSize));
+  let hi = Math.floor(requestedFontSize) - 1;
+  let best: { fontSize: number; lines: string[]; lineHeight: number } | null =
+    null;
+
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2);
+    const result = measure(mid);
+    if (result.fits) {
+      best = {
+        fontSize: mid,
+        lines: result.lines,
+        lineHeight: result.lineHeight,
+      };
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+
+  if (best) {
+    return best;
+  }
+
+  // Nothing fits even at the minimum size; caller truncates the overflow
+  const smallest = measure(minFontSize);
+  return {
+    fontSize: minFontSize,
+    lines: smallest.lines,
+    lineHeight: smallest.lineHeight,
+  };
+}
+
+/**
  * Draw text with emoji support and bracket highlighting
  */
 async function drawTextWithEmojis(
@@ -520,32 +587,43 @@ export async function generateDialogueImage(
     game.layout;
   const maxWidth = textAreaEnd.x - textPosition.x;
   const maxHeight = textAreaEnd.y - textPosition.y;
-  const lineHeight = Math.floor(fontSize * lineHeightMultiplier);
-  const maxLines = Math.floor(maxHeight / lineHeight) || 1;
 
   // Set up font for text with fallback support
   const fontFamily = getTextFontFamilyWithFallback(game, fontId);
-  ctx.font = `${fontSize}px ${fontFamily}`;
   ctx.textBaseline = "alphabetic";
 
-  // Wrap text
-  let lines = wrapText(ctx, text, maxWidth, fontSize);
+  // Wrap text, shrinking the font when it overflows the text area
+  const fitted = fitTextToArea(
+    ctx,
+    text,
+    maxWidth,
+    maxHeight,
+    fontFamily,
+    fontSize,
+    game.layout.minFontSize,
+    lineHeightMultiplier,
+  );
+  const drawFontSize = fitted.fontSize;
+  const lineHeight = fitted.lineHeight;
+  let lines = fitted.lines;
+  ctx.font = `${drawFontSize}px ${fontFamily}`;
 
-  // Limit to max lines
+  // Limit to max lines (only reachable when even the minimum size overflows)
+  const maxLines = Math.floor(maxHeight / lineHeight) || 1;
   if (lines.length > maxLines) {
     lines = lines.slice(0, maxLines);
   }
 
   // Draw text with emojis and highlighting
   const startX = textPosition.x;
-  const startY = textPosition.y + fontSize;
+  const startY = textPosition.y + drawFontSize;
 
   await drawTextWithEmojis(
     ctx,
     lines,
     startX,
     startY,
-    fontSize,
+    drawFontSize,
     lineHeight,
     defaultTextColor,
     character.themeColor,

@@ -51,6 +51,8 @@ export interface DialogueLayoutConfig {
   textAreaEnd: { x: number; y: number };
   // Default text settings
   defaultFontSize: number;
+  // Smallest size the text may shrink to when it overflows the text area
+  minFontSize: number;
   lineHeightMultiplier: number;
   // Shadow settings
   shadowOffset: { x: number; y: number };

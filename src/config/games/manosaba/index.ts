@@ -31,6 +31,7 @@ export const MANOSABA: GameDefinition = {
     textAreaEnd: { x: 2339, y: 800 },
     // Default text settings
     defaultFontSize: 72,
+    minFontSize: 36,
     lineHeightMultiplier: 1.2,
     // Shadow settings
     shadowOffset: { x: 2, y: 2 },
