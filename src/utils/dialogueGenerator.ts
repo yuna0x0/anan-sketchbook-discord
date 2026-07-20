@@ -357,7 +357,7 @@ export function wrapText(
 /**
  * Shrink the font until the wrapped text fits the text area.
  * Only shrinks: the requested size is never exceeded, so text that already
- * fits keeps the game's authored look. Returns the largest fitting size
+ * fits renders at the configured size. Returns the largest fitting size
  * (or minFontSize when nothing fits, leaving the caller to truncate).
  */
 export function fitTextToArea(
