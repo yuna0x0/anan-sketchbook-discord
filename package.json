@@ -34,20 +34,20 @@
     "url": "https://github.com/yuna0x0/anan-sketchbook-discord.git"
   },
   "license": "MIT",
-  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b",
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee",
   "dependencies": {
-    "@discordanalytics/discordjs": "^2.9.1",
-    "@discordjs/rest": "^2.6.1",
+    "@discordanalytics/discordjs": "^2.9.2",
+    "@discordjs/rest": "^2.6.3",
     "@twemoji/api": "^17.0.3",
     "canvas": "^3.2.3",
-    "discord-api-types": "^0.38.49",
-    "discord.js": "^14.26.4",
+    "discord-api-types": "^0.38.52",
+    "discord.js": "^14.27.0",
     "dotenv": "^17.4.2",
-    "sharp": "^0.35.2"
+    "sharp": "^0.35.3"
   },
   "devDependencies": {
-    "@types/node": "^26.0.1",
-    "tsx": "^4.22.4",
-    "typescript": "^6.0.3"
+    "@types/node": "^26.1.2",
+    "tsx": "^4.23.5",
+    "typescript": "^7.0.2"
   }
 }
