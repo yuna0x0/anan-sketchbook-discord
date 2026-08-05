@@ -80,4 +80,18 @@ export const FONT_NAME_LOCALIZATIONS: Record<string, LocalizationMap> = {
     [Locale.ChineseCN]: "Noto Serif Thai SemiBold",
     [Locale.Japanese]: "Noto Serif Thai SemiBold",
   },
+  madokaRunes: {
+    [Locale.EnglishUS]: "Madoka Runes",
+    [Locale.EnglishGB]: "Madoka Runes",
+    [Locale.ChineseTW]: "魔女文字（符文）",
+    [Locale.ChineseCN]: "魔女文字（符文）",
+    [Locale.Japanese]: "魔女文字（ルーン）",
+  },
+  madokaMusical: {
+    [Locale.EnglishUS]: "Madoka Musical",
+    [Locale.EnglishGB]: "Madoka Musical",
+    [Locale.ChineseTW]: "魔女文字（音符）",
+    [Locale.ChineseCN]: "魔女文字（音符）",
+    [Locale.Japanese]: "魔女文字（音符）",
+  },
 };

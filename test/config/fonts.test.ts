@@ -81,9 +81,21 @@ describe("fonts config", () => {
       );
     });
 
-    it("should have 10 fonts defined", () => {
+    it("should have madokaRunes font defined", () => {
+      assert.ok(FONTS.madokaRunes, "madokaRunes should be defined");
+      assert.equal(FONTS.madokaRunes.name, "Madoka Runes");
+      assert.equal(FONTS.madokaRunes.file, "MadokaRunes-2.0.ttf");
+    });
+
+    it("should have madokaMusical font defined", () => {
+      assert.ok(FONTS.madokaMusical, "madokaMusical should be defined");
+      assert.equal(FONTS.madokaMusical.name, "Madoka Musical");
+      assert.equal(FONTS.madokaMusical.file, "MadokaMusical.ttf");
+    });
+
+    it("should have 12 fonts defined", () => {
       const fontCount = Object.keys(FONTS).length;
-      assert.equal(fontCount, 10, "Should have exactly 10 fonts");
+      assert.equal(fontCount, 12, "Should have exactly 12 fonts");
     });
 
     it("all fonts should have name and file properties", () => {
@@ -127,6 +139,8 @@ describe("fonts config", () => {
         "notoSerifSCSemiBold",
         "notoSerifKRSemiBold",
         "notoSerifThaiSemiBold",
+        "madokaRunes",
+        "madokaMusical",
       ];
 
       for (const fontId of fontIds) {
@@ -159,6 +173,8 @@ describe("fonts config", () => {
         "notoSerifSCSemiBold",
         "notoSerifKRSemiBold",
         "notoSerifThaiSemiBold",
+        "madokaRunes",
+        "madokaMusical",
       ];
 
       // This just verifies the IDs are valid at compile time

@@ -48,6 +48,14 @@ export const FONTS = {
     name: "Noto Serif Thai SemiBold",
     file: "NotoSerifThai-SemiBold.otf",
   },
+  madokaRunes: {
+    name: "Madoka Runes",
+    file: "MadokaRunes-2.0.ttf",
+  },
+  madokaMusical: {
+    name: "Madoka Musical",
+    file: "MadokaMusical.ttf",
+  },
 } as const;
 
 export type FontId = keyof typeof FONTS;
