@@ -144,5 +144,6 @@ Character designs, sprites, and game-related assets are the property of Re,AER L
 
 - Sketchbook concept from [MarkCup-Official/Anan-s-Sketchbook-Chat-Box](https://github.com/MarkCup-Official/Anan-s-Sketchbook-Chat-Box)
 - Dialogue concept from [oplivilqo/manosaba_text_box](https://github.com/oplivilqo/manosaba_text_box)
+- Madoka Runes and Madoka Musical fonts from the fan-made witch script collected on the [Puella Magi Wiki](https://wiki.puella-magi.net/Community:Fanworks#Runic_font). The runes originate from Puella Magi Madoka Magica, which is the property of Magica Quartet/Aniplex.
 - Image filters (paper texture, halftone, dithering, heatmap) inspired by the image filters of [Paper Shaders](https://github.com/paper-design/shaders) by [Paper](https://paper.design) (Apache License 2.0). The CPU implementations in this project are original ports built on classic image-processing algorithms (ordered Bayer dithering, halftone screening, palette mapping, procedural paper grain) rather than translations of the GLSL sources.
 
